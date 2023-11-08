@@ -3,7 +3,7 @@ import re
 import sys
 from collections import Counter
 import itertools
-
+import math
 import numpy as np
 
 # setting up a logger to print to std out and to a file
@@ -38,6 +38,8 @@ logger.addHandler(file_handler)
 # https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl
 
 # TODO adducts Ca, Na, NH4, FA, AA, Li,
+
+# Added some additional isotopes at 0% abundnace for ease of logic later on
 ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
     "H": {"abundance": (0.999885, 0.000115), "mass": (1, 2)},
     "C": {"abundance": (0.9893, 0.0107), "mass": (12, 13)},
@@ -45,9 +47,12 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
     "O": {"abundance": (0.99757, 0.00038, 0.00205), "mass": (16, 17, 18)},
     "Si": {"abundance": (0.92223, 0.04685, 0.03092), "mass": (28, 29, 30)},
     "P": {"abundance": (1), "mass": (31)},
-    "S": {"abundance": (0.9499, 0.0075, 0.0425, 0.0001), "mass": (32, 33, 34, 36)},
-    "Cl": {"abundance": (0.7576, 0.2424), "mass": (35, 37)},
-    "Br": {"abundance": (0.5069, 0.4931), "mass": (79, 81)},
+    "S": {
+        "abundance": (0.9499, 0.0075, 0.0425, 0, 0.0001),
+        "mass": (32, 33, 34, 35, 36),
+    },
+    "Cl": {"abundance": (0.7576, 0, 0.2424), "mass": (35, 36, 37)},
+    "Br": {"abundance": (0.5069, 0, 0.4931), "mass": (79, 80, 81)},
 }
 
 
@@ -84,6 +89,13 @@ class Labelled_compound:
         logger.debug(elements)
         return elements
 
+    def combo_to_target(self, target, number_of_isotopes, number_of_atoms):
+        combinations = itertools.combinations_with_replacement(
+            range(number_of_isotopes), number_of_atoms
+        )
+        valid_combos = [combo for combo in combinations if sum(combo) == target]
+        return valid_combos
+
     def matrix_populator(self, isotope_ID: str, number_of_atoms: int):
         """this will take an istope and generate all the possible combinations
         that can occur depending on the number of atoms present in the compound
@@ -108,9 +120,15 @@ class Labelled_compound:
             mass_list.append(current_mass)
             current_mass += 1
 
-        combinations = itertools.combinations_with_replacement(
-            range(number_of_isotopes), number_of_atoms
-        )
+        for element in mass_list:
+            # TODO clean this up. self needed? @classmethod
+
+            Labelled_compound.combo_to_target(
+                self=self,
+                target=element,
+                number_of_isotopes=number_of_isotopes,
+                number_of_atoms=number_of_atoms,
+            )
 
     def correction_matrix(
         atom_ID: str, experimental_peak_number: int, number_of_atoms: int | None
@@ -160,19 +178,19 @@ class Labelled_compound:
                 else:
                     corr_matrix[i, j] = xxxx
 
-    def correction_matrix_original(self):
+    def correction_matrix_original(self, k, v, b, A, n):
         """This creates a matrix
         This matrix will be square, i=j
         This matrix will be triangular, diagonal values are equal and
         one side all values are = 0
 
         """
-
-    v_factorial = math.factorial(v)
-    product_term = 1
-    for i in range(n):
-        product_term *= (A * b[k] ** vk[k]) / math.factorial(vk[k])
-    pass
+        vk = v * k
+        v_factorial = math.factorial(v)
+        product_term = 1
+        for i in range(n):
+            product_term *= (A * b[k] ** vk[k]) / math.factorial(vk[k])
+        pass
 
 
 def test_prod(n):
