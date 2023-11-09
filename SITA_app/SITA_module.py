@@ -57,13 +57,25 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
 
 
 class Labelled_compound:
-    def __init__(self, formula, labelled_element):
+    def __init__(self, formula: str, labelled_element: str, vector_size: int):
         """
         Each compound will have a molecular formula and
         one labelled element
+        The vector_size will be required as an argument.
+        This will define how big the matrix will be.
+        Eg if you see M+0, M+1, M+2, the vector_size will be 3
         """
         self.formula = formula
         self.labelled_element = labelled_element
+        self.vector_size = vector_size
+
+        # adding error handling here if vector_size is greater than
+        # the number of lablled elements eg vecto_size of 4 when
+        # alanine only has 3 carbons
+
+    def matrix_generator(self):
+        # generate an empty matrix of appropriate size
+        return np.zeros((self.vector_size, self.vector_size))
 
     def formula_parser(self):
         """
@@ -86,17 +98,29 @@ class Labelled_compound:
                 count = int(count)
 
             elements[element] += count
+
         logger.debug(elements)
         return elements
 
-    def combo_to_target(self, target, number_of_isotopes, number_of_atoms):
+    def combo_solver(self, number_of_isotopes: int, number_of_atoms: int):
+        # figures out all the combinations depening on the
+        # number of atoms and isotpes of an element
+        # eg for the carbon in alanine C3H7NO2 there will be two isotopes
+        # and three carbons
         combinations = itertools.combinations_with_replacement(
             range(number_of_isotopes), number_of_atoms
         )
+        return list(combinations)
+
+    def valid_combos(
+        self, target: int, combinations: itertools.combinations_with_replacement
+    ):
+        # a valid combo being one that sums up to the target eg M+0 has a sum
+        # of 0, M+1 a sum of 1 etc ...
         valid_combos = [combo for combo in combinations if sum(combo) == target]
         return valid_combos
 
-    def matrix_populator(self, isotope_ID: str, number_of_atoms: int):
+    def matrix_populator(self, element_ID: str, number_of_atoms: int):
         """this will take an istope and generate all the possible combinations
         that can occur depending on the number of atoms present in the compound
         practically only a subset will be used to populate the matrix which is
@@ -108,123 +132,50 @@ class Labelled_compound:
         # getting the mass of the 1st element of "mass" which is the most
         # abundant
         base_mass = (
-            ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[isotope_ID].get("mass")[0]
+            ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[element_ID].get("mass")[0]
             * number_of_atoms
         )
         number_of_isotopes = len(
-            ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[isotope_ID]["abundance"]
+            ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[element_ID]["abundance"]
         )
         mass_list = []
         current_mass = base_mass
         for i in range(0, number_of_atoms + 1):
             mass_list.append(current_mass)
             current_mass += 1
+        combos = combo_solver()
+        element_matrix = self.matrix_generator()
+
+        for i in range(self.vector_size):
+            for j in range(self.vector_size):
+                if j - i == 0:
+                    element_matrix[i, j] = self.combo_to_target(
+                        target=0,
+                        number_of_isotopes=number_of_isotopes,
+                        number_of_atoms=number_of_atoms,
+                    )
+                if j - i < 0:
+                    element_matrix[i, j] = 0
+
+                else:
+                    element_matrix[i, j] = self.combo_to_target(
+                        target=j - i,
+                        number_of_isotopes=number_of_isotopes,
+                        number_of_atoms=number_of_atoms,
+                    )
 
         for element in mass_list:
-            # TODO clean this up. self needed? @classmethod
-
-            Labelled_compound.combo_to_target(
-                self=self,
+            self.combo_to_target(
                 target=element,
                 number_of_isotopes=number_of_isotopes,
                 number_of_atoms=number_of_atoms,
             )
 
-    def correction_matrix(
-        atom_ID: str, experimental_peak_number: int, number_of_atoms: int | None
-    ):
-        """
-        calculates a matrix for one element
 
-        parameters
-        ----------
-
-        atom_ID: str
-            what the atom is
-        experimental_peak_number: int
-            takes the number of peaks seen in the experimental data and creates a matrix to match the size
-        number_of_atoms: int
-            the number of the selected atom present in the molecular formula
-        returns
-        -------
-        the correction matrix
-
-
-        notes
-        -----
-        eg for a 4x4 matrix for C, it's calculated out to M+3
-
-
-        +-----+-----------+-----------+-----------+------+
-        | M+0 |    12C8   |     0     |     0     |   0  |
-        +-----+-----------+-----------+-----------+------+
-        | M+1 | 12C7 13C1 |    12C8   |     0     |   0  |
-        +-----+-----------+-----------+-----------+------+
-        | M+2 | 12C6 13C2 | 12C7 13C1 |    12C8   |   0  |
-        +-----+-----------+-----------+-----------+------+
-        | M+3 | 12C5 13C3 | 12C6 13C2 | 12C7 13C1 | 12C8 |
-        +-----+-----------+-----------+-----------+------+
-
-        """
-        # right now calculated out to n+1, which is the maximum number of peaks that would be seen
-        # in practice this probably only needs to go out to M+5 or M+6
-
-        corr_matrix = np.zeros(experimental_peak_number, experimental_peak_number)
-        xxxx = 1
-        for i in range(experimental_peak_number):
-            for j in range(i + 1):
-                if i < j:
-                    corr_matrix[i, j] = 0
-                else:
-                    corr_matrix[i, j] = xxxx
-
-    def correction_matrix_original(self, k, v, b, A, n):
-        """This creates a matrix
-        This matrix will be square, i=j
-        This matrix will be triangular, diagonal values are equal and
-        one side all values are = 0
-
-        """
-        vk = v * k
-        v_factorial = math.factorial(v)
-        product_term = 1
-        for i in range(n):
-            product_term *= (A * b[k] ** vk[k]) / math.factorial(vk[k])
-        pass
-
-
-def test_prod(n):
-    k = 1
-    n = int(n)
-    for i in range(k, n):
-        print(i)
-
-
-def correction_matrix_test(
-    size_of_matrix=4,
-    C_num=0,
-    H_num=0,
-    O_num=0,
-    N_num=0,
-    Si_num=0,
-    S_num=0,
-):
-    """that matrix needs to take into account the number of
-    units the user wants to calculate out to. Use itertools
-    to calculate the the different combinations that are required.
-    eg O has 16O, 17O, and 18O that can contribute.
-    where there are 2 O, M+2 can come from 17O2, or 16O + 18O
-    Genereally this can be restricted to the number of carbons
-
-    """
-    corr_matrix = np.zeros((size_of_matrix, size_of_matrix))
-    carbon_matrix = np.zeros((size_of_matrix, size_of_matrix))
-    carbon_list = []
-
-    for count, item in enumerate(carbon_isotopes):
-        carbon_list.append()
-    for i in range(size_of_matrix):
-        for j in range(size_of_matrix):
-            matrix[i, j] = XXXXXX
-
-    pass
+if __name__ == "__main__":
+    my_instance = Labelled_compound(
+        formula="C3H7NO2",
+        labelled_element="C",
+        vector_size=3,
+    )
+    my_instance.matrix_populator(element_ID="C", number_of_atoms=3)
