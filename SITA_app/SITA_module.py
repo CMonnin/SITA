@@ -68,7 +68,7 @@ class Labelled_compound:
         self.formula = formula
         self.labelled_element = labelled_element
         self.vector_size = vector_size
-
+        self.formula_dict = self.formula_parser()
         # adding error handling here if vector_size is greater than
         # the number of lablled elements eg vecto_size of 4 when
         # alanine only has 3 carbons
@@ -112,13 +112,26 @@ class Labelled_compound:
         )
         return list(combinations)
 
-    def valid_combos(
-        self, target: int, combinations: itertools.combinations_with_replacement
-    ):
+    def valid_combos(self, target: int, combinations: list):
         # a valid combo being one that sums up to the target eg M+0 has a sum
         # of 0, M+1 a sum of 1 etc ...
         valid_combos = [combo for combo in combinations if sum(combo) == target]
         return valid_combos
+
+    def abundnace_solver(self, combinations, element_ID):
+        # will take the combination and convert it to the abundance to then populate
+        # the matrix
+        number_of_atoms = xxx
+        isotope_counter = Counter(combinations)
+        abundance = math.factorial(number_of_atoms)
+        for key, value in isotope_counter.items():
+            abundance = (
+                abundance
+                * ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[element_ID][key] ** value
+                / math.factorial(value)
+            )
+
+        return abundance
 
     def matrix_populator(self, element_ID: str, number_of_atoms: int):
         """this will take an istope and generate all the possible combinations
@@ -143,33 +156,25 @@ class Labelled_compound:
         for i in range(0, number_of_atoms + 1):
             mass_list.append(current_mass)
             current_mass += 1
-        combos = combo_solver()
+        combos = self.combo_solver(number_of_isotopes, number_of_atoms)
         element_matrix = self.matrix_generator()
 
         for i in range(self.vector_size):
             for j in range(self.vector_size):
                 if j - i == 0:
-                    element_matrix[i, j] = self.combo_to_target(
-                        target=0,
-                        number_of_isotopes=number_of_isotopes,
-                        number_of_atoms=number_of_atoms,
+                    element_matrix[i, j] = self.valid_combos(
+                        target=0, combinations=combos
                     )
                 if j - i < 0:
                     element_matrix[i, j] = 0
 
                 else:
-                    element_matrix[i, j] = self.combo_to_target(
-                        target=j - i,
-                        number_of_isotopes=number_of_isotopes,
-                        number_of_atoms=number_of_atoms,
+                    element_matrix[i, j] = self.valid_combos(
+                        target=j - i, combinations=combos
                     )
 
         for element in mass_list:
-            self.combo_to_target(
-                target=element,
-                number_of_isotopes=number_of_isotopes,
-                number_of_atoms=number_of_atoms,
-            )
+            self.valid_combos(target=element, combinations=combos)
 
 
 if __name__ == "__main__":
