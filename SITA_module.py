@@ -1,11 +1,13 @@
+import itertools
 import logging
+import math
 import re
 import sys
 from collections import Counter
-import itertools
-import math
+
 import numpy as np
 
+# ------------------------------------------------------
 # setting up a logger to print to std out and to a file
 # creating logger and handlers
 logger = logging.getLogger("logger")
@@ -22,25 +24,21 @@ console_handler.setFormatter(quiet_formatter)
 # adding the handlers to the logger
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
-
-
+# -------------------------------------------------------
 # correction of natural abundance
 # MDV_star = Corr^-1 dot MDVa
-# MDV: Corrected Istopic Mass Distribution Vector
+# MDV_star: Corrected Istopic Mass Distribution Vector
 # Corr^-1: Inverse of correction matrix
 # MDVa = Experimentally measured Mass distrubtion vector normalised to 1
-
-
-# dict of the natural abundance of common elements
-# Source:
-# Coursey, J. S., et al. "Atomic weights and isotopic compositions with
-# relative atomic masses." NIST Physical Measurement Laboratory (2015).
-# https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl
 # ----------------------------------------------------------------------
 # TODO adducts Ca, Na, NH4, FA, AA, Li,
 # TODO: correct for contribtuion by unalblled mass
 # -----------------------------------------------------------------------
-# Added some additional isotopes at 0% abundnace for ease of logic later on
+# dict of the natural abundance of common elements
+# Source:
+# Coursey, J. S., et al. "Atomic weights and isotopic compositions with
+# relative atomic masses." NIST Physical Measurement Laboratory (2015).
+# https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl Added some additional isotopes at 0% abundnace for ease of logic later on
 ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
     "H": {"abundance": (0.999885, 0.000115), "mass": (1, 2)},
     "C": {"abundance": (0.9893, 0.0107), "mass": (12, 13)},
@@ -69,12 +67,19 @@ class Labelled_compound:
         ----------
         formula = the chemical formula of the compound or fragment
         labelled_element = which element is lablled (currently only supports one labelled_element)
-        mdv_a = a list of numbers corresponding to the observed ratio of isotopes
+        mdv_a = a list of numbers corresponding to the observed ratio of isotopes, the sum
+        of these ratios needs to equal 1.
         """
+        if not isinstance(mdv_a, list):
+            numbers = re.split(r",\s*", mdv_a)
+            float_numbers = [float(num) for num in numbers]
+            self.mdv_a = np.array(float_numbers)
+        else:
+            self.mdv_a = np.array(mdv_a)
+
         self.formula = formula
         self.labelled_element = labelled_element
         # convert to a vector and reshape it into a horizontal vector
-        self.mdv_a = np.array(mdv_a)
         self.mdv_a = self.mdv_a.reshape(-1, 1)
         self.vector_size = self.mdv_a.size
         self.formula_dict = self.formula_parser()
@@ -111,7 +116,7 @@ class Labelled_compound:
         logger.debug(f" parsed formula: {elements}")
         return elements
 
-    def combo_solver(self, element_ID: str) -> list | None:
+    def combo_solver(self, element_ID: str) -> list:
         # figures out all the combinations depening on the
         # number of atoms and isotpes of an element
         # eg for the carbon in alanine C3H7NO2 there will be two isotopes
@@ -126,7 +131,7 @@ class Labelled_compound:
         )
         return list(combinations)
 
-    def valid_combos(self, target: int, combinations: list | None) -> list | None:
+    def valid_combos(self, target: int, combinations: list) -> list | None:
         # a valid combo being one that sums up to the target eg M+0 has a sum
         # of 0, M+1 a sum of 1 etc ...
         # TODO needs to somehow deal with multiple tuples (i think)
@@ -230,12 +235,29 @@ class Labelled_compound:
         logger.info(f"mdv_star_normalised \n{mdv_star_normalised}")
         return mdv_star_normalised
 
-    def mdv_AA(self):
+    def mdv_AA(self, base_aa_formula, base_aa_mdv):
         # TODO possibly implement this eqution for f_unlabelled
         # f_unlabelled = e**-(dil rate)(time of substrate feeding)
         f_unlabelled = 0.01
 
-        pass
+        mdv_unlabelled = Labelled_compound(
+            formula=base_aa_formula,
+            labelled_element="C",
+            mdv_a=base_aa_mdv,
+        )
+        mdv_aa = np.dot(self.mdv_star() - f_unlabelled, mdv_unlabelled.mdv_star()) / (
+            1 - f_unlabelled
+        )
+        return mdv_aa
+
+
+def main():
+    formula = input(
+        f"please enter a molecular formuala for a compound or fragment \n eg C8H23NO2Si2"
+    )
+    labelled_element = input(f"Which element is labelled?")
+    mdv_a = input(list(f"list of observed ratios: "))
+    pass
 
 
 if __name__ == "__main__":
