@@ -56,7 +56,9 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
 
 
 class Labelled_compound:
-    def __init__(self, formula: str, labelled_element: str, mdv_a: list):
+    def __init__(
+        self, formula: str, labelled_element: str, mdv_a=None, vector_size=None
+    ):
         """
         Each compound will have a molecular formula and
         one labelled element
@@ -70,18 +72,29 @@ class Labelled_compound:
         mdv_a = a list of numbers corresponding to the observed ratio of isotopes, the sum
         of these ratios needs to equal 1.
         """
-        if not isinstance(mdv_a, list):
-            numbers = re.split(r",\s*", mdv_a)
-            float_numbers = [float(num) for num in numbers]
-            self.mdv_a = np.array(float_numbers)
-        else:
-            self.mdv_a = np.array(mdv_a)
+        if vector_size:
+            self.vector_size = vector_size
+        if mdv_a:
+            if not isinstance(mdv_a, list):
+                numbers = re.split(r",\s*", mdv_a)
+                float_numbers = [float(num) for num in numbers]
+                self.mdv_a = np.array(float_numbers)
+            else:
+                self.mdv_a = np.array(mdv_a)
+
+            self.mdv_a = self.mdv_a.reshape(-1, 1)
+            self.vector_size = self.mdv_a.size
+            logger.debug(f" vector_size: {self.vector_size}")
+        if self.vector_size == None:
+            logger.warning(
+                "vector_size cannot be None. Pass an mdv_a or a vector_size argument."
+            )
+            raise ValueError("vector_size cannot be None")
 
         self.formula = formula
         self.labelled_element = labelled_element
         # convert to a vector and reshape it into a horizontal vector
-        self.mdv_a = self.mdv_a.reshape(-1, 1)
-        self.vector_size = self.mdv_a.size
+
         self.formula_dict = self.formula_parser()
         # adding error handling here if vector_size is greater than
         # the number of lablled elements eg vecto_size of 4 when
@@ -221,13 +234,13 @@ class Labelled_compound:
             current_matrix = self.matrix_populator(element)
             logger.info(f"matrix for {element}: \n{current_matrix}")
             correction_matrix = np.dot(correction_matrix, current_matrix)
+        correction_matrix = np.linalg.inv(correction_matrix)
         logger.info(f"corr matrix: \n{correction_matrix}")
         return correction_matrix
 
     def mdv_star(self):
         correction_matrix = self.correction_matrix()
-        correction_matrix_inverse = np.linalg.inv(correction_matrix)
-        mdv_star = np.dot(correction_matrix_inverse, self.mdv_a)
+        mdv_star = np.dot(correction_matrix, self.mdv_a)
 
         # normalise the vector to 1
         vector_sum = np.sum(mdv_star)
@@ -249,24 +262,3 @@ class Labelled_compound:
             1 - f_unlabelled
         )
         return mdv_aa
-
-
-def main():
-    formula = input(
-        f"please enter a molecular formuala for a compound or fragment \n eg C8H23NO2Si2"
-    )
-    labelled_element = input(f"Which element is labelled?")
-    mdv_a = input(list(f"list of observed ratios: "))
-    pass
-
-
-if __name__ == "__main__":
-    my_instance = Labelled_compound(
-        formula="C8H23NO2Si2",
-        labelled_element="C",
-        mdv_a=[0.6628, 0.1517, 0.0749, 0.1507],
-    )
-    my_instance.mdv_star()
-
-    logger.debug(f"class vars:{vars(my_instance)}")
-    # print(dir(my_instance))

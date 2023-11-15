@@ -1,5 +1,8 @@
+import logging
+
 import dash
 import dash_bootstrap_components as dbc
+import numpy as np
 from dash import Input, Output, State, dcc, html
 
 import SITA_module
@@ -24,23 +27,35 @@ app.layout = html.Div(
         dcc.Input(id="mdv_a_input", type="text", placeholder="Enter mdv ratio "),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
         html.Div(id="output-container"),
+        dcc.Store(id="input-store", storage_type="session"),
+        dbc.Button("Download", id="download-button", color="primary"),
+        dcc.Download(id="download-matrix"),
     ]
 )
 
 
 @app.callback(
-    Output("output-container", "children"),
+    Output("input-store", "data"),
     [Input("submit-button", "n_clicks")],
     [State("molecular_formula_input", "value"), State("mdv_a_input", "value")],
 )
-def update_output(n_clicks, molecular_formula_input, mdv_a_input):
-    if n_clicks is not None:
-        print(f"You entered: {molecular_formula_input}")
-    if molecular_formula_input:
+def store_input(n_clicks, molecular_formula_input, mdv_a_input):
+    if n_clicks is not None and molecular_formula_input and mdv_a_input:
         result = SITA_module.Labelled_compound(
             formula=molecular_formula_input, labelled_element="C", mdv_a=mdv_a_input
         ).mdv_star()
-        print(f"Result: {result}")
+        return result
+
+
+@app.callback(
+    Output("download-matrix", "data"),
+    [Input("download-button", "n_clicks")],
+    [State("input-store", "data")],
+)
+def update_output(ts, stored_data):
+    if ts is not None:
+        matrix_csv = np.savetxt("mdv_star.csv", stored_data, delimiter=",")
+        return matrix_csv
 
 
 if __name__ == "__main__":
