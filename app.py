@@ -11,7 +11,7 @@ app.layout = html.Div(
     [
         html.H1("SITA app"),
         html.P(
-            "This app will determine the correction matrix for a given molecular formula eg C8H23NO2Si2",
+            "This app will determine the correction matrix for a given molecular formula eg C8H23NO2Si2 ",
         ),
         html.P(
             "Enter a molecular formula and an MDV ratio eg 0.6228, 0.1517, 0.0749, 0.1507"
