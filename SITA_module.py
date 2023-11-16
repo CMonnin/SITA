@@ -228,7 +228,7 @@ class Labelled_compound:
         logger.debug(element_matrix)
         return element_matrix
 
-    def correction_matrix(self):
+    def correction_matrix(self, save_to_text=False):
         correction_matrix = np.identity(self.vector_size)
         for element in self.formula_dict:
             current_matrix = self.matrix_populator(element)
@@ -236,6 +236,9 @@ class Labelled_compound:
             correction_matrix = np.dot(correction_matrix, current_matrix)
         correction_matrix = np.linalg.inv(correction_matrix)
         logger.info(f"corr matrix: \n{correction_matrix}")
+        if save_to_text == True:
+            file_name = self.formula + ".csv"
+            np.savetxt(file_name, correction_matrix, delimiter=",")
         return correction_matrix
 
     def mdv_star(self):
