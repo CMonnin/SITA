@@ -15,10 +15,11 @@ app = dash.Dash(external_stylesheets=[dbc.themes.LUX])
 app.layout = html.Div(
     [
         html.H1("SITA app"),
+        html.Hr(),
         html.P(
-            "This app will determine the correction matrix for a given molecular formula eg C8H23NO2Si2 ",
+            "This app will determine the correction matrix for a given molecular formula e.g. C8H23NO2Si2 ",
         ),
-        html.P("Enter a molecular formula "),
+        html.P("Enter a molecular formula: "),
         dcc.Input(
             id="molecular_formula_input",
             type="text",
@@ -26,18 +27,41 @@ app.layout = html.Div(
         ),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
         html.Div(id="output-container"),
+        html.H4("Copy to Clipboard"),
         dcc.Clipboard(id="table_copy", style={"fontSize": 20}),
+        html.H2("Correction matrix", id="matrix_heading", style={"display": "none"}),
         dash_table.DataTable(
             id="table",
             style_header={"display": "none"},
         ),
-    ]
+        html.Footer(
+            children=[
+                html.Hr(),
+                html.P("Created by Cian Monnin"),
+                html.A(
+                    "At the Metabolomic Innovation Resource, Goodman Cancer Institute, McGill University",
+                    href="https://www.mcgill.ca/gci/facilities/metabolomics-innovation-resource-mir",
+                ),
+                html.Br(),
+                html.A("Github", href="https://github.com/CMonnin"),
+                html.Hr(),
+            ]
+        ),
+    ],
+    style={
+        "display": "flex",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "justifyContent": "center",
+        "padding": "20px",
+    },
 )
 
 
 @app.callback(
     Output("table", "data"),
     Output("table", "columns"),
+    Output("matrix_heading", "style"),
     [Input("submit-button", "n_clicks")],
     [State("molecular_formula_input", "value")],
 )
@@ -58,7 +82,7 @@ def update_table(n_clicks, molecular_formula_input):
             }
             for i in df.columns
         ]
-        return data, columns
+        return data, columns, {"display": "block"}
 
 
 @app.callback(
