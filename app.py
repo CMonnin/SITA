@@ -1,11 +1,8 @@
-import logging
-import csv
 import dash
-from dash import dash_table
 import dash_bootstrap_components as dbc
 import numpy as np
-from dash import Input, Output, State, dcc, html
 import pandas as pd
+from dash import Input, Output, State, dash_table, dcc, html
 
 import SITA_module
 
@@ -29,11 +26,11 @@ app.layout = html.Div(
         ),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
         html.Div(id="output-container"),
-        dcc.Store(id="input-store", storage_type="session"),
-        dbc.Button("Download", id="download-button", color="primary"),
-        dcc.Download(id="download-matrix"),
         dcc.Clipboard(id="table_copy", style={"fontSize": 20}),
-        dash_table.DataTable(id="table", style_header={"display": "none"}),
+        dash_table.DataTable(
+            id="table",
+            style_header={"display": "none"},
+        ),
     ]
 )
 
@@ -53,7 +50,14 @@ def update_table(n_clicks, molecular_formula_input):
         ).correction_matrix()
         df = pd.DataFrame(result)
         data = df.to_dict("records")
-        columns = [{"name": "", "id": str(i)} for i in df.columns]
+        print(data)
+        columns = [
+            {
+                "name": "",
+                "id": str(i),
+            }
+            for i in df.columns
+        ]
         return data, columns
 
 
@@ -63,8 +67,8 @@ def update_table(n_clicks, molecular_formula_input):
     State("table", "data"),
 )
 def copy(_, data):
-    dff = pd.DataFrame(data)
-    return dff.to_csv(index=False)
+    df_copy = pd.DataFrame(data)
+    return df_copy.to_csv(index=False)
 
 
 if __name__ == "__main__":
