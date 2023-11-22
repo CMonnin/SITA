@@ -11,7 +11,7 @@ df = pd.DataFrame()
 
 app = dash.Dash(__name__)
 app = dash.Dash(external_stylesheets=[dbc.themes.LUX])
-
+server = app.server
 app.layout = html.Div(
     [
         html.H1("SITA app"),
