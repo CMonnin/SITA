@@ -38,7 +38,7 @@ logger.addHandler(file_handler)
 # Source:
 # Coursey, J. S., et al. "Atomic weights and isotopic compositions with
 # relative atomic masses." NIST Physical Measurement Laboratory (2015).
-# https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl Added some additional isotopes at 0% abundnace for ease of logic later on
+# https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl Added some additional isotopes at 0% abundance for ease of logic later on
 ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
     "H": {"abundance": (0.999885, 0.000115), "mass": (1, 2)},
     "C": {"abundance": (0.9893, 0.0107), "mass": (12, 13)},
@@ -55,7 +55,7 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
 }
 
 
-class Labelled_compound:
+class LabelledCompound:
     def __init__(
         self, formula: str, labelled_element: str, mdv_a=None, vector_size=None
     ):
@@ -158,7 +158,7 @@ class Labelled_compound:
             logger.debug(f"No combinations")
             return None
 
-    def abundnace_solver(self, combinations: Counter, element_ID: str):
+    def abundance_solver(self, combinations: Counter, element_ID: str):
         # will take the combination and convert it to the abundance to then populate
         # the matrix
 
@@ -208,7 +208,7 @@ class Labelled_compound:
                     # get a list of valid combos for this location
                     combinations = self.valid_combos(target=0, combinations=combos)
                     if combinations:
-                        element_matrix[i, j] = self.abundnace_solver(
+                        element_matrix[i, j] = self.abundance_solver(
                             combinations, element_ID
                         )
                 if j - i < 0:
@@ -219,7 +219,7 @@ class Labelled_compound:
                     # get a list of valid combinations for this location
                     combinations = self.valid_combos(target=j - i, combinations=combos)
                     if combinations:
-                        element_matrix[i, j] = self.abundnace_solver(
+                        element_matrix[i, j] = self.abundance_solver(
                             combinations, element_ID
                         )
 
@@ -258,7 +258,7 @@ class Labelled_compound:
         # f_unlabelled = e**-(dil rate)(time of substrate feeding)
         f_unlabelled = 0.01
 
-        mdv_unlabelled = Labelled_compound(
+        mdv_unlabelled = LabelledCompound(
             formula=base_aa_formula,
             labelled_element="C",
             mdv_a=base_aa_mdv,

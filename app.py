@@ -69,7 +69,7 @@ def update_table(n_clicks, molecular_formula_input):
     if n_clicks is None:
         return dash.no_update
     if molecular_formula_input:
-        result = SITA_module.Labelled_compound(
+        result = SITA_module.LabelledCompound(
             formula=molecular_formula_input, labelled_element="C", vector_size=4
         ).correction_matrix()
         df = pd.DataFrame(result)

@@ -21,15 +21,15 @@ if not logger.handlers:
 
 #
 def main():
-    alanine_M_57 = SITA_module.Labelled_compound(
+    alanine_M_57 = SITA_module.LabelledCompound(
         formula="C8H23NO2Si2",
         labelled_element="C",
         mdv_a=[0.6628, 0.1517, 0.0749, 0.1507],
     )
-    pyruvate_M_57 = SITA_module.Labelled_compound(
+    pyruvate_M_57 = SITA_module.LabelledCompound(
         formula="H12C6N1O3Si1", labelled_element="C", vector_size=4
     )
-    citrate_M_57 = SITA_module.Labelled_compound(
+    citrate_M_57 = SITA_module.LabelledCompound(
         formula="H39C20O6Si3", labelled_element="C", vector_size=7
     )
     # pyruvate_M_57.correction_matrix(save_to_text=True)
@@ -37,7 +37,7 @@ def main():
     # np.savetxt(citrate_M_57.correction_matrix(), ",")
     # logger.debug(f"class vars:{vars(citrate_M_57)}")
     # print(dir(test_instamdv_starnce))pass
-    alanine_M_57_2 = SITA_module.Labelled_compound(
+    alanine_M_57_2 = SITA_module.LabelledCompound(
         formula="C8H23NO1Si2",
         labelled_element="C",
         mdv_a=[0.3711, 0.3211, 0.2348, 0.0561, 0.0169],
