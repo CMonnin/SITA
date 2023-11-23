@@ -75,6 +75,7 @@ class Labelled_compound:
         if vector_size:
             self.vector_size = vector_size
         if mdv_a:
+            # convert to a vector and reshape it into a horizontal vector
             if not isinstance(mdv_a, list):
                 numbers = re.split(r",\s*", mdv_a)
                 float_numbers = [float(num) for num in numbers]
@@ -92,13 +93,12 @@ class Labelled_compound:
             raise ValueError("vector_size cannot be None")
 
         self.formula = formula
-        self.labelled_element = labelled_element
-        # convert to a vector and reshape it into a horizontal vector
+        if labelled_element:
+            self.labelled_element = labelled_element
+        else:
+            self.labelled_element = "C"
 
         self.formula_dict = self.formula_parser()
-        # adding error handling here if vector_size is greater than
-        # the number of lablled elements eg vecto_size of 4 when
-        # alanine only has 3 carbons
 
     def matrix_generator(self):
         # generate an empty matrix of appropriate size
@@ -108,15 +108,14 @@ class Labelled_compound:
         """
         This function parses the molecular formula
         """
-        formula = self.formula
         # Make two capture groups:
         # 1st one upper case letter lower case letter,
         # 2nd group the digits following the 1st group
         pattern = r"([A-Z][a-z]*)(\d*)"
+        formula = self.formula
         groups = re.findall(pattern, formula)
         # creating a dict of hashable objects, the elements and their counts
         elements = Counter()
-
         for element, count in groups:
             # if count is empty e.g. mol formula: CO, assume 1
             if count == "":
@@ -186,8 +185,8 @@ class Labelled_compound:
                 ** value
                 / math.factorial(value)
             )
-
-        return abundance
+        # approximate for sigfigs
+        return round(abundance, 4)
 
     def matrix_populator(self, element_ID: str):
         """this will take an istope and generate all the possible combinations
@@ -232,9 +231,10 @@ class Labelled_compound:
         correction_matrix = np.identity(self.vector_size)
         for element in self.formula_dict:
             current_matrix = self.matrix_populator(element)
-            logger.info(f"matrix for {element}: \n{current_matrix}")
+            logger.debug(f"matrix for {element}: \n{current_matrix}")
             correction_matrix = np.dot(correction_matrix, current_matrix)
         correction_matrix = np.linalg.inv(correction_matrix)
+        correction_matrix = np.round(correction_matrix, 4)
         logger.info(f"corr matrix: \n{correction_matrix}")
         if save_to_text == True:
             file_name = self.formula + ".csv"
@@ -243,12 +243,14 @@ class Labelled_compound:
 
     def mdv_star(self):
         correction_matrix = self.correction_matrix()
-        mdv_star = np.dot(correction_matrix, self.mdv_a)
+        mdv_star = np.round(np.dot(correction_matrix, self.mdv_a), 4)
 
         # normalise the vector to 1
         vector_sum = np.sum(mdv_star)
-        mdv_star_normalised = mdv_star / vector_sum
+        mdv_star_normalised = np.round(mdv_star / vector_sum, 4)
+
         logger.info(f"mdv_star_normalised \n{mdv_star_normalised}")
+
         return mdv_star_normalised
 
     def mdv_AA(self, base_aa_formula, base_aa_mdv):

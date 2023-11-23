@@ -5,7 +5,7 @@ import SITA_module
 
 logger = logging.getLogger("logger")
 logger.propagate = False
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 test_console_handler = logging.StreamHandler(sys.stdout)
 
 # setting up formating for the handlers
@@ -32,11 +32,18 @@ def main():
     citrate_M_57 = SITA_module.Labelled_compound(
         formula="H39C20O6Si3", labelled_element="C", vector_size=7
     )
-    pyruvate_M_57.correction_matrix(save_to_text=True)
+    # pyruvate_M_57.correction_matrix(save_to_text=True)
     # pyruvate_M_57.mdv_star()
     # np.savetxt(citrate_M_57.correction_matrix(), ",")
     # logger.debug(f"class vars:{vars(citrate_M_57)}")
     # print(dir(test_instamdv_starnce))pass
+    alanine_M_57_2 = SITA_module.Labelled_compound(
+        formula="C8H23NO1Si2",
+        labelled_element="C",
+        mdv_a=[0.3711, 0.3211, 0.2348, 0.0561, 0.0169],
+    )
+
+    pyruvate_M_57.correction_matrix()
 
 
 if __name__ == "__main__":
