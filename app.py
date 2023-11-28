@@ -29,7 +29,9 @@ app.layout = html.Div(
         html.Div(id="output-container"),
         html.H4("Copy to Clipboard"),
         dcc.Clipboard(id="table_copy", style={"fontSize": 20}),
-        html.H2("Correction matrix", id="matrix_heading", style={"display": "none"}),
+        html.H2(
+            "Inverted correction matrix", id="matrix_heading", style={"display": "none"}
+        ),
         dash_table.DataTable(
             id="table",
             style_header={"display": "none"},
