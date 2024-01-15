@@ -25,6 +25,13 @@ app.layout = html.Div(
             type="text",
             placeholder="Enter molecular formula...",
         ),
+        html.P("Enter number of isotopes to calculate: "),
+        html.P("Optional. Default is 4 if no value is given. Integers only"),
+        dcc.Input(
+            id="number_of_isotopes",
+            type="text",
+            placeholder="Number of isotopes...",
+        ),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
         html.Div(id="output-container"),
         html.H4("Copy to Clipboard"),
@@ -32,6 +39,38 @@ app.layout = html.Div(
         html.H2("Correction matrix", id="matrix_heading", style={"display": "none"}),
         dash_table.DataTable(
             id="table",
+            style_header={"display": "none"},
+        ),
+        html.Hr(),
+        html.H4("Correcting via mdv"),
+        html.P(
+            "If you have the isotope distribution of your analyte of interest and want the corrected distribution: "
+        ),
+        html.P("Enter a molecular formula: "),
+        dcc.Input(
+            id="molecular_formula_input_mdv",
+            type="text",
+            placeholder="Enter molecular formula...",
+        ),
+        html.P("Enter number of isotopes to calculate: "),
+        html.P("Optional. Default is 4 if no value is given. Integers only"),
+        dcc.Input(
+            id="number_of_isotopes_mdv",
+            type="text",
+            placeholder="Number of isotopes...",
+        ),
+        dcc.Input(
+            id="user_mdv",
+            type="text",
+            placeholder="Enter mdv ...",
+        ),
+        dbc.Button("Submit", id="submit-mdv-button", color="primary", className="mr-1"),
+        html.Div(id="mdv_star_output-container"),
+        html.H4("Copy to Clipboard"),
+        dcc.Clipboard(id="mdv_star_copy", style={"fontSize": 20}),
+        html.H2("mdv_star", id="mdv_star_heading", style={"display": "none"}),
+        dash_table.DataTable(
+            id="mdv_star_table",
             style_header={"display": "none"},
         ),
         html.Footer(
@@ -64,13 +103,20 @@ app.layout = html.Div(
     Output("matrix_heading", "style"),
     [Input("submit-button", "n_clicks")],
     [State("molecular_formula_input", "value")],
+    [State("number_of_isotopes", "value")],
 )
-def update_table(n_clicks, molecular_formula_input):
+def update_table(n_clicks, molecular_formula_input, number_of_isotopes):
+    if not number_of_isotopes:
+        number_of_isotopes = 4
+    else:
+        number_of_isotopes = int(number_of_isotopes)
     if n_clicks is None:
         return dash.no_update
     if molecular_formula_input:
         result = SITA_module.LabelledCompound(
-            formula=molecular_formula_input, labelled_element="C", vector_size=4
+            formula=molecular_formula_input,
+            labelled_element="C",
+            vector_size=number_of_isotopes,
         ).correction_matrix()
         df = pd.DataFrame(result)
         data = df.to_dict("records")
@@ -89,6 +135,48 @@ def update_table(n_clicks, molecular_formula_input):
     Output("table_copy", "content"),
     Input("table_copy", "n_clicks"),
     State("table", "data"),
+)
+# callback for mdv
+@app.callback(
+    Output("mdv_star_table", "data"),
+    Output("mdv_star_table", "columns"),
+    Output("mdv_star_heading", "style"),
+    [Input("submit-mdv-button", "n_clicks")],
+    [State("molecular_formula_input_mdv", "value")],
+    [State("number_of_isotopes_mdv", "value")],
+    [State("user_mdv", "value")],
+)
+def update_table_mdv(n_clicks, molecular_formula_input, number_of_isotopes, user_mdv):
+    if not number_of_isotopes:
+        number_of_isotopes = 4
+    else:
+        number_of_isotopes = int(number_of_isotopes)
+    if n_clicks is None:
+        return dash.no_update
+    if molecular_formula_input:
+        result = SITA_module.LabelledCompound(
+            formula=molecular_formula_input,
+            labelled_element="C",
+            vector_size=number_of_isotopes,
+            mdv_a=user_mdv,
+        ).mdv_star()
+        df = pd.DataFrame(result)
+        data = df.to_dict("records")
+        print(data)
+        columns = [
+            {
+                "name": "",
+                "id": str(i),
+            }
+            for i in df.columns
+        ]
+        return data, columns, {"display": "block"}
+
+
+@app.callback(
+    Output("mdv_star_copy", "content"),
+    Input("mdv_star_copy", "n_clicks"),
+    State("mdv_star_table", "data"),
 )
 def copy(_, data):
     df_copy = pd.DataFrame(data)
