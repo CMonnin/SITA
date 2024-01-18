@@ -15,9 +15,10 @@ server = app.server
 app.layout = html.Div(
     [
         html.H1("SITA app"),
-        html.Hr(),
+        html.H4("An app to aid in stable isotope tracer experiemnts"),
+        html.Hr(style={"width": "60%"}),
         html.P(
-            "This app will determine the correction matrix for a given molecular formula e.g. C8H23NO2Si2 ",
+            "To determine the correction matrix for a given molecular formula e.g. C8H23NO2Si2 ",
         ),
         html.P("Enter a molecular formula: "),
         dcc.Input(
@@ -26,14 +27,13 @@ app.layout = html.Div(
             placeholder="Enter molecular formula...",
         ),
         html.P("Enter number of isotopes to calculate: "),
-        html.P("Optional. Default is 4 if no value is given. Integers only"),
+        html.P("Optional. Default is 4 if no value is given. Enter integers only"),
         dcc.Input(
             id="number_of_isotopes",
             type="text",
             placeholder="Number of isotopes...",
         ),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
-        html.Div(id="output-container"),
         html.H4("Copy to Clipboard"),
         dcc.Clipboard(id="table_copy", style={"fontSize": 20}),
         html.H2("Correction matrix", id="matrix_heading", style={"display": "none"}),
@@ -41,7 +41,12 @@ app.layout = html.Div(
             id="table",
             style_header={"display": "none"},
         ),
-        html.Hr(),
+        html.Hr(style={"width": "60%"}),
+        html.Div(
+            children=[
+                html.Hr(),
+            ]
+        ),
         html.H4("Correcting via mdv"),
         html.P(
             "If you have the isotope distribution of your analyte of interest and want the corrected distribution: "
@@ -65,7 +70,6 @@ app.layout = html.Div(
             placeholder="Enter mdv ...",
         ),
         dbc.Button("Submit", id="submit-mdv-button", color="primary", className="mr-1"),
-        html.Div(id="mdv_star_output-container"),
         html.H4("Copy to Clipboard"),
         dcc.Clipboard(id="mdv_star_copy", style={"fontSize": 20}),
         html.H2("mdv_star", id="mdv_star_heading", style={"display": "none"}),
@@ -136,6 +140,11 @@ def update_table(n_clicks, molecular_formula_input, number_of_isotopes):
     Input("table_copy", "n_clicks"),
     State("table", "data"),
 )
+def copy_table(_, data):
+    df_copy = pd.DataFrame(data)
+    return df_copy.to_csv(index=False)
+
+
 # callback for mdv
 @app.callback(
     Output("mdv_star_table", "data"),
