@@ -42,11 +42,6 @@ app.layout = html.Div(
             style_header={"display": "none"},
         ),
         html.Hr(style={"width": "60%"}),
-        html.Div(
-            children=[
-                html.Hr(),
-            ]
-        ),
         html.H4("Correcting via mdv"),
         html.P(
             "If you have the isotope distribution of your analyte of interest and want the corrected distribution: "
@@ -77,6 +72,28 @@ app.layout = html.Div(
             id="mdv_star_table",
             style_header={"display": "none"},
         ),
+        html.H4("Multiple compounds"),
+        html.P(
+            "Upload a .csv to create an excel workbook for multiple compounds at once"
+        ),
+        dcc.Upload(
+            id="upload-data",
+            children=html.Div(["Drag and Drop or ", html.A("Select a file")]),
+            style={
+                "width": "100%",
+                "height": "60px",
+                "lineHeight": "60px",
+                "borderWidth": "1px",
+                "borderStyle": "dashed",
+                "borderRadius": "5px",
+                "textAlign": "center",
+                "margin": "10px",
+            },
+            # Don't allow multiple files to be uploaded
+            multiple=False,
+        ),
+        html.Div(id="output-data-upload"),
+        # Footer
         html.Footer(
             children=[
                 html.Hr(),
