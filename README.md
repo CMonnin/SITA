@@ -10,8 +10,6 @@ It is used to determine the inverted correction matrix to correct for natural ab
 ## How to use
 A live version of this app is currently available at https://sita-app.up.railway.app/  
 This repo also allows you to run a local version in your browser.  
-It uses mostly numpy in the backend and provides a GUI in the browser using Plotly Dash.  
-
 ### To run a local version
 
 ##### Prerequsites
@@ -20,7 +18,7 @@ It uses mostly numpy in the backend and provides a GUI in the browser using Plot
 #### Set up
 - Clone this repo either by downloading or using  
 `$ git clone https://github.com/CMonnin/SITA.git`  
-- Once you've cloned the repo `cd` into the directory and create a virtual environment.  
+- Once you've cloned the repo `$ cd` into the directory and create a virtual environment.  
 - For example: `$ python -m venv venv`  
 - Active your venv: `$ source venv/bin/activate`
 - Install requirements `$ pip install -r requirements.txt`  
@@ -39,7 +37,7 @@ It uses mostly numpy in the backend and provides a GUI in the browser using Plot
 ## Contributing
 This is an open-source project. Contribution are welcome.  
 Please for the repo, make changes, and perform a pull request.  
-If you'd like a feature to be added please open an issue or reach me: ` cianmonnin at gmail dot com`  
+If you'd like a feature to be added please open an issue or reach out to me: `cianmonnin at gmail dot com`  
 
 ## Release History
 - 0.1.0 Initial Release
