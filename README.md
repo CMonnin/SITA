@@ -5,7 +5,7 @@ This app was created to aid in stable isotope tracer analysis (SITA) experiments
 It is used to determine the inverted correction matrix to correct for natural abudnace in analaytes of interest.
 
 ## Features
-- Enter a chemical formula to obtain a an inverted correction matrix for the analyte
+- Enter a chemical formula to obtain an inverted correction matrix for the analyte
 
 ## How to use
 A live version of this app is currently available at https://sita-app.up.railway.app/  
