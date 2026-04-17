@@ -57,48 +57,64 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
 
 class LabelledCompound:
     def __init__(
-        self, formula: str, labelled_element: str, mdv_a=None, vector_size=None
+        self,
+        formula: str,
+        labelled_element: str,
+        backbone_c: int,
+        mdv_a=None,
+        vector_size=None,
     ):
         """
         Each compound will have a molecular formula and
         one labelled element
-        The vector_size will be required as an argument.
-        This will define how big the matrix will be.
-        Eg if you see M+0, M+1, M+2, the vector_size will be 3
         Parameters
         ----------
         formula = the chemical formula of the compound or fragment
         labelled_element = which element is lablled (currently only supports one labelled_element)
+        backbone_c = number of atoms of the labelled element that are subject to
+            the tracer experiment (e.g. 3 for alanine's backbone, even though the
+            TBDMS fragment C8H23NO2Si2 contains 8 C total). These positions carry
+            the measurement signal and are excluded from the natural-abundance
+            correction per Fischer & Zamboni (2007).
         mdv_a = a list of numbers corresponding to the observed ratio of isotopes, the sum
-        of these ratios needs to equal 1.
+            of these ratios needs to equal 1.
+        vector_size = optional override for the MDV length. Defaults to backbone_c + 1
+            (covers M+0 ... M+backbone_c). Provide explicitly only if a truncated
+            MDV is measured.
         """
-        if vector_size:
-            self.vector_size = vector_size
-        if mdv_a:
-            # convert to a vector and reshape it into a horizontal vector
+        self.formula = formula
+        self.labelled_element = labelled_element if labelled_element else "C"
+        self.formula_dict = self.formula_parser()
+
+        if backbone_c is None:
+            raise ValueError("backbone_c is required")
+        total_labelled = self.formula_dict.get(self.labelled_element, 0)
+        if backbone_c < 0 or backbone_c > total_labelled:
+            raise ValueError(
+                f"backbone_c={backbone_c} must be between 0 and the "
+                f"{self.labelled_element} count in the formula ({total_labelled})"
+            )
+        self.backbone_c = backbone_c
+
+        if mdv_a is not None:
             if not isinstance(mdv_a, list):
                 numbers = re.split(r",\s*", mdv_a)
                 float_numbers = [float(num) for num in numbers]
                 self.mdv_a = np.array(float_numbers)
             else:
                 self.mdv_a = np.array(mdv_a)
-
             self.mdv_a = self.mdv_a.reshape(-1, 1)
             self.vector_size = self.mdv_a.size
-            logger.debug(f" vector_size: {self.vector_size}")
-        if self.vector_size == None:
-            logger.warning(
-                "vector_size cannot be None. Pass an mdv_a or a vector_size argument."
-            )
-            raise ValueError("vector_size cannot be None")
-
-        self.formula = formula
-        if labelled_element:
-            self.labelled_element = labelled_element
+        elif vector_size:
+            self.vector_size = vector_size
         else:
-            self.labelled_element = "C"
+            self.vector_size = backbone_c + 1
 
-        self.formula_dict = self.formula_parser()
+        if self.vector_size > backbone_c + 1:
+            raise ValueError(
+                f"vector_size={self.vector_size} exceeds backbone_c+1={backbone_c + 1}"
+            )
+        logger.debug(f" vector_size: {self.vector_size}")
 
     def matrix_generator(self):
         # generate an empty matrix of appropriate size
@@ -128,13 +144,17 @@ class LabelledCompound:
         logger.debug(f" parsed formula: {elements}")
         return elements
 
-    def combo_solver(self, element_ID: str) -> list:
-        # figures out all the combinations depening on the
-        # number of atoms and isotpes of an element
-        # eg for the carbon in alanine C3H7NO2 there will be two isotopes
-        # and three carbons
+    def combo_solver(self, element_ID: str, atom_count_override=None) -> list:
+        # figures out all the combinations depending on the
+        # number of atoms and isotopes of an element.
+        # atom_count_override lets callers reduce the atom count for the
+        # labelled element (backbone carbons don't contribute to natural
+        # abundance correction).
 
-        number_of_atoms = self.formula_dict[element_ID]
+        if atom_count_override is not None:
+            number_of_atoms = atom_count_override
+        else:
+            number_of_atoms = self.formula_dict[element_ID]
         number_of_isotopes = len(
             ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[element_ID]["abundance"]
         )
@@ -158,14 +178,16 @@ class LabelledCompound:
             logger.debug(f"No combinations")
             return None
 
-    def abundance_solver(self, combinations: Counter, element_ID: str):
+    def abundance_solver(
+        self, combinations: Counter, element_ID: str, atom_count_override=None
+    ):
         # will take the combination and convert it to the abundance to then populate
         # the matrix
 
-        # determine the number of atoms from the chem formula
-        # for a specific element
-        # eg in C3H7NO2 for 'C' this will be 3
-        number_of_atoms = self.formula_dict[element_ID]
+        if atom_count_override is not None:
+            number_of_atoms = atom_count_override
+        else:
+            number_of_atoms = self.formula_dict[element_ID]
         # the isotope counter will determine the values for the
         # equations eg #istope_1 ...
         # eg for M+1 in alanine considering carbon
@@ -188,40 +210,25 @@ class LabelledCompound:
         # approximate for sigfigs
         return round(abundance, 4)
 
-    def matrix_populator(self, element_ID: str):
-        """this will take an istope and generate all the possible combinations
-        that can occur depending on the number of atoms present in the compound
-        practically only a subset will be used to populate the matrix which is
-        dependant on the size of the matrix
-        this might have to be changed. I don't know how much of performance hit
-        it will cause.
+    def matrix_populator(self, element_ID: str, atom_count_override=None):
+        """Build the per-element natural-abundance contribution matrix.
+        atom_count_override reduces the atom count for the labelled element so
+        the tracer-subject backbone carbons don't appear in the correction.
         """
 
-        # get the combos for the element
-        combos = self.combo_solver(element_ID)
-        # create an empty matrix
+        combos = self.combo_solver(element_ID, atom_count_override=atom_count_override)
         element_matrix = self.matrix_generator()
 
         for i in range(self.vector_size):
             for j in range(self.vector_size):
-                if j - i == 0:
-                    # get a list of valid combos for this location
-                    combinations = self.valid_combos(target=0, combinations=combos)
-                    if combinations:
-                        element_matrix[i, j] = self.abundance_solver(
-                            combinations, element_ID
-                        )
                 if j - i < 0:
-                    # here this is supposed to remain 0
                     element_matrix[i, j] = 0
-
-                else:
-                    # get a list of valid combinations for this location
-                    combinations = self.valid_combos(target=j - i, combinations=combos)
-                    if combinations:
-                        element_matrix[i, j] = self.abundance_solver(
-                            combinations, element_ID
-                        )
+                    continue
+                combinations = self.valid_combos(target=j - i, combinations=combos)
+                if combinations:
+                    element_matrix[i, j] = self.abundance_solver(
+                        combinations, element_ID, atom_count_override=atom_count_override
+                    )
 
         element_matrix = element_matrix.transpose()
         logger.debug(element_matrix)
@@ -229,8 +236,16 @@ class LabelledCompound:
 
     def correction_matrix(self, save_to_text=False):
         correction_matrix = np.identity(self.vector_size)
-        for element in self.formula_dict:
-            current_matrix = self.matrix_populator(element)
+        for element, count in self.formula_dict.items():
+            if element == self.labelled_element:
+                effective_count = count - self.backbone_c
+                if effective_count == 0:
+                    continue
+                current_matrix = self.matrix_populator(
+                    element, atom_count_override=effective_count
+                )
+            else:
+                current_matrix = self.matrix_populator(element)
             logger.debug(f"matrix for {element}: \n{current_matrix}")
             correction_matrix = np.dot(correction_matrix, current_matrix)
         correction_matrix = np.linalg.inv(correction_matrix)
@@ -253,17 +268,16 @@ class LabelledCompound:
 
         return mdv_star_normalised
 
-    def mdv_AA(self, base_aa_formula, base_aa_mdv):
-        # TODO possibly implement this eqution for f_unlabelled
-        # f_unlabelled = e**-(dil rate)(time of substrate feeding)
-        f_unlabelled = 0.01
-
+    def mdv_AA(self, base_aa_formula, base_aa_mdv, base_aa_backbone_c, f_unlabelled=0.01):
+        # Correct for pre-existing unlabelled biomass per Fischer & Zamboni (2007):
+        # mdv_aa = (mdv_star - f * mdv_unlabelled) / (1 - f)
+        # TODO: f_unlabelled may be estimated as exp(-dilution_rate * feeding_time)
         mdv_unlabelled = LabelledCompound(
             formula=base_aa_formula,
             labelled_element="C",
+            backbone_c=base_aa_backbone_c,
             mdv_a=base_aa_mdv,
         )
-        mdv_aa = np.dot(self.mdv_star() - f_unlabelled, mdv_unlabelled.mdv_star()) / (
+        return (self.mdv_star() - f_unlabelled * mdv_unlabelled.mdv_star()) / (
             1 - f_unlabelled
         )
-        return mdv_aa

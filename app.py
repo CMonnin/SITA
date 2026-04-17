@@ -26,12 +26,17 @@ app.layout = html.Div(
             type="text",
             placeholder="Enter molecular formula...",
         ),
-        html.P("Enter number of isotopes to calculate: "),
-        html.P("Optional. Default is 4 if no value is given. Enter integers only"),
+        html.P("Enter number of backbone carbons (tracer-subject): "),
+        html.P(
+            "Number of C atoms in this fragment that are subject to 13C labelling "
+            "(e.g. 3 for alanine, NOT the 8 total C in the TBDMS fragment). "
+            "The MDV length is derived as backbone_c + 1."
+        ),
         dcc.Input(
-            id="number_of_isotopes",
-            type="text",
-            placeholder="Number of isotopes...",
+            id="backbone_c",
+            type="number",
+            min=0,
+            placeholder="Backbone carbons...",
         ),
         dbc.Button("Submit", id="submit-button", color="primary", className="mr-1"),
         html.H4("Copy to Clipboard"),
@@ -52,12 +57,16 @@ app.layout = html.Div(
             type="text",
             placeholder="Enter molecular formula...",
         ),
-        html.P("Enter number of isotopes to calculate: "),
-        html.P("Optional. Default is 4 if no value is given. Integers only"),
+        html.P("Enter number of backbone carbons (tracer-subject): "),
+        html.P(
+            "Number of C atoms subject to 13C labelling (e.g. 3 for alanine). "
+            "The MDV length should be backbone_c + 1."
+        ),
         dcc.Input(
-            id="number_of_isotopes_mdv",
-            type="text",
-            placeholder="Number of isotopes...",
+            id="backbone_c_mdv",
+            type="number",
+            min=0,
+            placeholder="Backbone carbons...",
         ),
         dcc.Input(
             id="user_mdv",
@@ -124,20 +133,18 @@ app.layout = html.Div(
     Output("matrix_heading", "style"),
     [Input("submit-button", "n_clicks")],
     [State("molecular_formula_input", "value")],
-    [State("number_of_isotopes", "value")],
+    [State("backbone_c", "value")],
 )
-def update_table(n_clicks, molecular_formula_input, number_of_isotopes):
-    if not number_of_isotopes:
-        number_of_isotopes = 4
-    else:
-        number_of_isotopes = int(number_of_isotopes)
+def update_table(n_clicks, molecular_formula_input, backbone_c):
     if n_clicks is None:
+        return dash.no_update
+    if backbone_c is None:
         return dash.no_update
     if molecular_formula_input:
         result = SITA_module.LabelledCompound(
             formula=molecular_formula_input,
             labelled_element="C",
-            vector_size=number_of_isotopes,
+            backbone_c=int(backbone_c),
         ).correction_matrix()
         df = pd.DataFrame(result)
         data = df.to_dict("records")
@@ -169,21 +176,19 @@ def copy_table(_, data):
     Output("mdv_star_heading", "style"),
     [Input("submit-mdv-button", "n_clicks")],
     [State("molecular_formula_input_mdv", "value")],
-    [State("number_of_isotopes_mdv", "value")],
+    [State("backbone_c_mdv", "value")],
     [State("user_mdv", "value")],
 )
-def update_table_mdv(n_clicks, molecular_formula_input, number_of_isotopes, user_mdv):
-    if not number_of_isotopes:
-        number_of_isotopes = 4
-    else:
-        number_of_isotopes = int(number_of_isotopes)
+def update_table_mdv(n_clicks, molecular_formula_input, backbone_c, user_mdv):
     if n_clicks is None:
+        return dash.no_update
+    if backbone_c is None:
         return dash.no_update
     if molecular_formula_input:
         result = SITA_module.LabelledCompound(
             formula=molecular_formula_input,
             labelled_element="C",
-            vector_size=number_of_isotopes,
+            backbone_c=int(backbone_c),
             mdv_a=user_mdv,
         ).mdv_star()
         df = pd.DataFrame(result)
