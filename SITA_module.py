@@ -163,20 +163,13 @@ class LabelledCompound:
         )
         return list(combinations)
 
-    def valid_combos(self, target: int, combinations: list) -> list | None:
-        # a valid combo being one that sums up to the target eg M+0 has a sum
-        # of 0, M+1 a sum of 1 etc ...
-        # TODO needs to somehow deal with multiple tuples (i think)
-        valid_combos = [combo for combo in combinations if sum(combo) == target]
-        if valid_combos:
-            combo_list = list(valid_combos[0])
-            logger.debug(f"combo_list: {combo_list}")
-            isotope_counter = Counter(combo_list)
-            logger.debug(f"valid_combo: {isotope_counter}")
-            return combo_list
-        else:
-            logger.debug(f"No combinations")
-            return None
+    def valid_combos(self, target: int, combinations: list) -> list:
+        # All combinations summing to `target` mass-shift. For elements with
+        # >=3 isotopes (O, Si, S, Cl, Br), multiple distinct combinations can
+        # share the same mass shift (e.g. Si28+Si30 and Si29+Si29 both give
+        # mass shift 2). Every such combo contributes to the matrix cell and
+        # they must all be summed (see Nanchen et al. 2007 Fig. equations).
+        return [list(combo) for combo in combinations if sum(combo) == target]
 
     def abundance_solver(
         self, combinations: Counter, element_ID: str, atom_count_override=None
@@ -207,8 +200,7 @@ class LabelledCompound:
                 ** value
                 / math.factorial(value)
             )
-        # approximate for sigfigs
-        return round(abundance, 4)
+        return abundance
 
     def matrix_populator(self, element_ID: str, atom_count_override=None):
         """Build the per-element natural-abundance contribution matrix.
@@ -224,11 +216,13 @@ class LabelledCompound:
                 if j - i < 0:
                     element_matrix[i, j] = 0
                     continue
-                combinations = self.valid_combos(target=j - i, combinations=combos)
-                if combinations:
-                    element_matrix[i, j] = self.abundance_solver(
-                        combinations, element_ID, atom_count_override=atom_count_override
+                valid = self.valid_combos(target=j - i, combinations=combos)
+                cell = 0.0
+                for combo in valid:
+                    cell += self.abundance_solver(
+                        combo, element_ID, atom_count_override=atom_count_override
                     )
+                element_matrix[i, j] = cell
 
         element_matrix = element_matrix.transpose()
         logger.debug(element_matrix)
