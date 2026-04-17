@@ -1,10 +1,25 @@
 # SITA
 
 Natural-abundance correction for GC-MS mass distribution vectors (MDVs) from
-13C stable-isotope tracer experiments. Math follows Fischer & Zamboni,
-*Determination of metabolic flux ratios from 13C-experiments and
-gas chromatography-mass spectrometry data: protocol and principles*,
-Metabolomics: Methods and Protocols (2007).
+13C stable-isotope tracer experiments.
+
+## References
+
+The mathematical basis follows:
+
+- Nanchen, A., Fuhrer, T., Sauer, U. (2007). *Determination of Metabolic Flux
+  Ratios From 13C-Experiments and Gas Chromatography-Mass Spectrometry Data:
+  Protocol and Principles.* In: Metabolomics (Methods in Molecular Biology
+  358), Humana Press, pp. 177-197.
+  doi:[10.1007/978-1-59745-244-1_11](https://doi.org/10.1007/978-1-59745-244-1_11)
+
+- Fischer, E., Zamboni, N., Sauer, U. (2004). *High-throughput metabolic flux
+  analysis based on gas chromatography-mass spectrometry derived 13C
+  constraints.* Analytical Biochemistry 325(2):308-316.
+  doi:[10.1016/j.ab.2003.10.036](https://doi.org/10.1016/j.ab.2003.10.036)
+
+The correction matrix and worked example pinned in `test.py` come from
+Nanchen 2007, §3.7 (alanine M-57 fragment).
 
 ## backbone_c
 
