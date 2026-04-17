@@ -263,8 +263,16 @@ class LabelledCompound:
         return mdv_star_normalised
 
     def mdv_AA(self, base_aa_formula, base_aa_mdv, base_aa_backbone_c, f_unlabelled=0.01):
-        # Correct for pre-existing unlabelled biomass per Fischer & Zamboni (2007):
+        # Correct for pre-existing unlabelled biomass per Nanchen 2007 Eq. 5:
         # mdv_aa = (mdv_star - f * mdv_unlabelled) / (1 - f)
+        #
+        # Caveat: the paper computes mdv_unlabelled from natural abundance
+        # (Eq. 4) given the fragment formula. This implementation instead
+        # requires the caller to supply a measured unlabelled MDV via
+        # base_aa_mdv. Both produce the same answer when the supplied vector
+        # matches the natural-abundance distribution, but if you rely on
+        # this function for real analysis, compute or measure that reference
+        # MDV carefully. Not currently exposed in the Dash UI.
         # TODO: f_unlabelled may be estimated as exp(-dilution_rate * feeding_time)
         mdv_unlabelled = LabelledCompound(
             formula=base_aa_formula,

@@ -51,6 +51,13 @@ app.layout = html.Div(
         html.P(
             "If you have the isotope distribution of your analyte of interest and want the corrected distribution: "
         ),
+        html.P(
+            "Note: this returns MDV* (natural-abundance-corrected). It does NOT "
+            "apply the unlabelled-biomass correction (Nanchen 2007 Eq. 5). If your "
+            "sample contains residual unlabelled cells from the inoculum, use "
+            "LabelledCompound.mdv_AA() programmatically after this step.",
+            style={"fontStyle": "italic", "color": "#555"},
+        ),
         html.P("Enter a molecular formula: "),
         dcc.Input(
             id="molecular_formula_input_mdv",
