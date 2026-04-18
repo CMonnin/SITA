@@ -14,7 +14,7 @@ ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
     "N": {"abundance": (0.99636, 0.00364), "mass": (14, 15)},
     "O": {"abundance": (0.99757, 0.00038, 0.00205), "mass": (16, 17, 18)},
     "Si": {"abundance": (0.92223, 0.04685, 0.03092), "mass": (28, 29, 30)},
-    "P": {"abundance": (1), "mass": (31)},
+    "P": {"abundance": (1,), "mass": (31,)},
     "S": {
         "abundance": (0.9499, 0.0075, 0.0425, 0, 0.0001),
         "mass": (32, 33, 34, 35, 36),

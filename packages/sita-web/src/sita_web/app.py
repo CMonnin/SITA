@@ -8,13 +8,15 @@ from sita_core import LabelledCompound
 
 logger = logging.getLogger("sita_web")
 
-# Configure sita_core logging to stdout so the web layer controls output.
-_core_logger = logging.getLogger("sita_core")
-_core_logger.setLevel(logging.INFO)
-if not _core_logger.handlers:
-    _core_handler = logging.StreamHandler(sys.stdout)
-    _core_handler.setFormatter(logging.Formatter("%(message)s"))
-    _core_logger.addHandler(_core_handler)
+
+def _configure_core_logging():
+    core_logger = logging.getLogger("sita_core")
+    if core_logger.handlers:
+        return
+    core_logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter("%(message)s"))
+    core_logger.addHandler(handler)
 
 
 def _matrix_to_csv(matrix):
@@ -26,6 +28,7 @@ def _json_error(message, status=400):
 
 
 def create_app():
+    _configure_core_logging()
     here = Path(__file__).parent
 
     app = Flask(

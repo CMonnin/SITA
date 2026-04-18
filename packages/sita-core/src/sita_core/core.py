@@ -52,6 +52,21 @@ class LabelledCompound:
         self.labelled_element = labelled_element if labelled_element else "C"
         self.formula_dict = self.formula_parser()
 
+        if not self.formula_dict:
+            raise ValueError(
+                f"formula={formula!r} parsed to no elements; element symbols must "
+                "start with an uppercase letter (e.g. 'H2O', not 'h2o')"
+            )
+        if self.labelled_element not in ISOTOPE_ABUNDANCE_DICT_UNIT_MASS:
+            raise ValueError(
+                f"labelled_element={self.labelled_element!r} is not a supported element "
+                f"(known: {sorted(ISOTOPE_ABUNDANCE_DICT_UNIT_MASS)})"
+            )
+        if self.labelled_element not in self.formula_dict:
+            raise ValueError(
+                f"labelled_element={self.labelled_element!r} not present in formula {formula!r}"
+            )
+
         if backbone_c is None:
             raise ValueError("backbone_c is required")
         total_labelled = self.formula_dict.get(self.labelled_element, 0)
@@ -209,7 +224,7 @@ class LabelledCompound:
             logger.debug(f"matrix for {element}: \n{current_matrix}")
             correction_matrix = np.dot(correction_matrix, current_matrix)
         correction_matrix = np.linalg.inv(correction_matrix)
-        correction_matrix = np.round(correction_matrix, 4)
+        # correction_matrix = np.round(correction_matrix, 4)
         logger.info(f"corr matrix: \n{correction_matrix}")
         if save_to_text is True:
             file_name = self.formula + ".csv"
@@ -218,12 +233,11 @@ class LabelledCompound:
 
     def mdv_star(self):
         correction_matrix = self.correction_matrix()
+        # mdv_star = np.round(np.dot(correction_matrix, self.mdv_a), 4)
         mdv_star = np.round(np.dot(correction_matrix, self.mdv_a), 4)
-
         # normalise the vector to 1
         vector_sum = np.sum(mdv_star)
-        mdv_star_normalised = np.round(mdv_star / vector_sum, 4)
-
+        mdv_star_normalised = mdv_star / vector_sum
         logger.info(f"mdv_star_normalised \n{mdv_star_normalised}")
 
         return mdv_star_normalised
@@ -231,7 +245,9 @@ class LabelledCompound:
     def mdv_unlabelled(self):
         # Natural-abundance MDV for the backbone_c labelled atoms only,
         # per Nanchen 2007 Eq. 4 (the reference distribution for Eq. 5).
-        abundances = ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[self.labelled_element]["abundance"]
+        abundances = ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[self.labelled_element][
+            "abundance"
+        ]
         n = self.backbone_c
         vec = np.zeros((self.vector_size, 1))
         for shift in range(self.vector_size):

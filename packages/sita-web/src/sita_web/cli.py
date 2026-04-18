@@ -2,11 +2,24 @@
 
 import argparse
 import csv
-import sys
+import re
 
 import pandas as pd
 
 from sita_core import LabelledCompound
+
+_XLSX_FORBIDDEN = re.compile(r"[:\\/?*\[\]]")
+
+
+def _sanitize_sheet_name(name: str, used: set[str]) -> str:
+    cleaned = _XLSX_FORBIDDEN.sub("_", name).strip()[:31] or "sheet"
+    candidate, n = cleaned, 1
+    while candidate in used:
+        suffix = f"_{n}"
+        candidate = cleaned[: 31 - len(suffix)] + suffix
+        n += 1
+    used.add(candidate)
+    return candidate
 
 
 def process_csv(file_path):
@@ -17,12 +30,21 @@ def process_csv(file_path):
     output_dict = {}
     with open(file_path, "r") as f:
         reader = csv.reader(f)
-        for line_counter, row in enumerate(reader):
-            if line_counter == 0:
+        for line_no, row in enumerate(reader, start=1):
+            if line_no == 1:
                 continue
-            name = row[0]
-            molecular_formula = row[1]
-            backbone_c = int(row[2])
+            if len(row) < 3:
+                raise ValueError(
+                    f"{file_path}:{line_no}: expected columns name,formula,backbone_c "
+                    f"(got {len(row)})"
+                )
+            name, molecular_formula, backbone_raw = row[0], row[1], row[2]
+            try:
+                backbone_c = int(backbone_raw)
+            except ValueError as e:
+                raise ValueError(
+                    f"{file_path}:{line_no}: backbone_c={backbone_raw!r} is not an int"
+                ) from e
             output_dict[name] = (
                 LabelledCompound(
                     formula=molecular_formula,
@@ -37,10 +59,12 @@ def process_csv(file_path):
 
 def csv_to_xlsx(a_dict, output_path="output.xlsx"):
     """Write one sheet per compound into a single .xlsx workbook."""
+    used: set[str] = set()
     with pd.ExcelWriter(output_path, mode="w") as writer:
-        for sheet_name, matrix in a_dict.items():
+        for raw_name, matrix in a_dict.items():
+            sheet = _sanitize_sheet_name(raw_name, used)
             pd.DataFrame(matrix).to_excel(
-                writer, sheet_name=sheet_name, header=False, index=False
+                writer, sheet_name=sheet, header=False, index=False
             )
 
 
