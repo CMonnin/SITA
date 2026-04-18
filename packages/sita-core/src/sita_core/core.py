@@ -234,7 +234,7 @@ class LabelledCompound:
     def mdv_star(self):
         correction_matrix = self.correction_matrix()
         # mdv_star = np.round(np.dot(correction_matrix, self.mdv_a), 4)
-        mdv_star = np.round(np.dot(correction_matrix, self.mdv_a), 4)
+        mdv_star = np.dot(correction_matrix, self.mdv_a)
         # normalise the vector to 1
         vector_sum = np.sum(mdv_star)
         mdv_star_normalised = mdv_star / vector_sum
