@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SITA — 13C natural-abundance correction</title>
+<meta name="description" content="Natural-abundance correction for GC-MS mass distribution vectors from 13C stable-isotope tracer experiments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,700;1,300;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<main class="page">
+
+  <header class="masthead">
+    <h1>SITA</h1>
+    <p class="tagline">
+      Natural-abundance correction for GC-MS mass distribution vectors<br>
+      from <sup>13</sup>C stable-isotope tracer experiments.
+    </p>
+  </header>
+
+  <section class="block" aria-labelledby="sec-01">
+    <h2 class="rule" id="sec-01"><span class="rule-label">[01] correction matrix</span></h2>
+    <p class="prose">
+      Generate the natural-abundance correction matrix for a given fragment.
+      Example: alanine (M&#8211;57)<sup>+</sup> is <code>C11H26NO2Si2</code> with 3 backbone carbons.
+    </p>
+
+    <form class="form" id="form-matrix" novalidate>
+      <div class="field">
+        <label for="matrix-formula">&gt; molecular formula</label>
+        <input type="text" id="matrix-formula" name="formula" autocomplete="off" spellcheck="false" placeholder="e.g. C11H26NO2Si2">
+      </div>
+      <div class="field">
+        <label for="matrix-backbone">&gt; backbone carbons</label>
+        <p class="help">Number of C atoms subject to <sup>13</sup>C labelling (not total C in the fragment). Matrix size is <code>backbone_c + 1</code>.</p>
+        <input type="number" id="matrix-backbone" name="backbone_c" min="0" step="1" inputmode="numeric" placeholder="e.g. 3">
+      </div>
+
+      <p class="error" id="matrix-error" aria-live="polite"></p>
+
+      <button type="submit" class="submit" data-default="compute matrix">compute matrix</button>
+    </form>
+
+    <figure class="result" id="matrix-result" hidden>
+      <figcaption class="cap">
+        <button type="button" class="copy" data-target="matrix-result" aria-label="Copy CSV to clipboard">[ copy ]</button>
+        <span class="cap-title" id="matrix-cap"></span>
+        <span class="cap-time" id="matrix-time"></span>
+      </figcaption>
+      <div class="table-wrap" id="matrix-table"></div>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="sec-02">
+    <h2 class="rule" id="sec-02"><span class="rule-label">[02] corrected mdv (mdv*)</span></h2>
+    <p class="prose">
+      Apply the correction matrix to a measured mass distribution vector.
+      Output is normalised to sum to 1.
+    </p>
+    <p class="note">
+      <strong>note:</strong> returns MDV* (natural-abundance-corrected) only. Does not
+      apply the unlabelled-biomass correction (Nanchen 2007 Eq. 5). For that, call
+      <code>LabelledCompound.mdv_AA()</code> programmatically.
+    </p>
+
+    <form class="form" id="form-mdv" novalidate>
+      <div class="field">
+        <label for="mdv-formula">&gt; molecular formula</label>
+        <input type="text" id="mdv-formula" name="formula" autocomplete="off" spellcheck="false" placeholder="e.g. C11H26NO2Si2">
+      </div>
+      <div class="field">
+        <label for="mdv-backbone">&gt; backbone carbons</label>
+        <input type="number" id="mdv-backbone" name="backbone_c" min="0" step="1" inputmode="numeric" placeholder="e.g. 3">
+      </div>
+      <div class="field">
+        <label for="mdv-values">&gt; measured mdv</label>
+        <p class="help">Comma-separated values summing to ~1. Length must equal <code>backbone_c + 1</code>.</p>
+        <input type="text" id="mdv-values" name="mdv" autocomplete="off" spellcheck="false" placeholder="e.g. 0.6228, 0.1517, 0.0749, 0.1507">
+      </div>
+
+      <p class="error" id="mdv-error" aria-live="polite"></p>
+
+      <button type="submit" class="submit" data-default="compute mdv*">compute mdv*</button>
+    </form>
+
+    <figure class="result" id="mdv-result" hidden>
+      <figcaption class="cap">
+        <button type="button" class="copy" data-target="mdv-result" aria-label="Copy CSV to clipboard">[ copy ]</button>
+        <span class="cap-title" id="mdv-cap"></span>
+        <span class="cap-time" id="mdv-time"></span>
+      </figcaption>
+      <div class="table-wrap" id="mdv-table"></div>
+    </figure>
+  </section>
+
+  <section class="block" aria-labelledby="sec-03">
+    <h2 class="rule" id="sec-03"><span class="rule-label">[03] references</span></h2>
+    <p class="prose">The natural-abundance correction math follows:</p>
+    <ol class="refs">
+      <li>
+        Nanchen, A., Fuhrer, T., Sauer, U. (2007).
+        <i>Determination of Metabolic Flux Ratios From <sup>13</sup>C-Experiments and Gas Chromatography&#8211;Mass Spectrometry Data: Protocol and Principles.</i>
+        In: Metabolomics (Methods in Molecular Biology 358), Humana Press, pp. 177&#8211;197.
+        <a href="https://doi.org/10.1007/978-1-59745-244-1_11">doi:10.1007/978-1-59745-244-1_11</a>
+      </li>
+      <li>
+        Fischer, E., Zamboni, N., Sauer, U. (2004).
+        <i>High-throughput metabolic flux analysis based on gas chromatography&#8211;mass spectrometry derived <sup>13</sup>C constraints.</i>
+        Analytical Biochemistry 325(2):308&#8211;316.
+        <a href="https://doi.org/10.1016/j.ab.2003.10.036">doi:10.1016/j.ab.2003.10.036</a>
+      </li>
+    </ol>
+  </section>
+
+</main>
+
+<footer class="modeline" role="contentinfo">
+  <span class="modeline-inner">
+    ─── sita · <sup>13</sup>c natural-abundance correction · nanchen/2007 · <span id="modeline-status">ready</span> ───
+  </span>
+  <span class="byline">
+    Cian Monnin · <a href="https://www.mcgill.ca/gci/facilities/metabolomics-innovation-resource-mir">MIR · Goodman Cancer Institute · McGill</a> · <a href="https://github.com/CMonnin">github</a>
+  </span>
+</footer>
+
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
