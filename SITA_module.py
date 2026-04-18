@@ -262,24 +262,32 @@ class LabelledCompound:
 
         return mdv_star_normalised
 
-    def mdv_AA(self, base_aa_formula, base_aa_mdv, base_aa_backbone_c, f_unlabelled=0.01):
+    def mdv_unlabelled(self):
+        # Natural-abundance MDV for the backbone_c labelled atoms only,
+        # per Nanchen 2007 Eq. 4 (the reference distribution for Eq. 5).
+        abundances = ISOTOPE_ABUNDANCE_DICT_UNIT_MASS[self.labelled_element]["abundance"]
+        n = self.backbone_c
+        vec = np.zeros((self.vector_size, 1))
+        for shift in range(self.vector_size):
+            combos = itertools.combinations_with_replacement(range(len(abundances)), n)
+            total = 0.0
+            for combo in combos:
+                if sum(combo) != shift:
+                    continue
+                counter = Counter(combo)
+                term = math.factorial(n)
+                for k, v in counter.items():
+                    term *= abundances[k] ** v / math.factorial(v)
+                total += term
+            vec[shift, 0] = total
+        return vec
+
+    def mdv_AA(self, f_unlabelled=0.01):
         # Correct for pre-existing unlabelled biomass per Nanchen 2007 Eq. 5:
-        # mdv_aa = (mdv_star - f * mdv_unlabelled) / (1 - f)
-        #
-        # Caveat: the paper computes mdv_unlabelled from natural abundance
-        # (Eq. 4) given the fragment formula. This implementation instead
-        # requires the caller to supply a measured unlabelled MDV via
-        # base_aa_mdv. Both produce the same answer when the supplied vector
-        # matches the natural-abundance distribution, but if you rely on
-        # this function for real analysis, compute or measure that reference
-        # MDV carefully. Not currently exposed in the Dash UI.
+        # mdv_AA = (mdv_star - f * mdv_unlabelled) / (1 - f)
+        # where mdv_unlabelled is the natural-abundance distribution of the
+        # n backbone atoms (Eq. 4), computed internally from backbone_c.
         # TODO: f_unlabelled may be estimated as exp(-dilution_rate * feeding_time)
-        mdv_unlabelled = LabelledCompound(
-            formula=base_aa_formula,
-            labelled_element="C",
-            backbone_c=base_aa_backbone_c,
-            mdv_a=base_aa_mdv,
-        )
-        return (self.mdv_star() - f_unlabelled * mdv_unlabelled.mdv_star()) / (
+        return (self.mdv_star() - f_unlabelled * self.mdv_unlabelled()) / (
             1 - f_unlabelled
         )

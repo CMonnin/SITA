@@ -41,6 +41,10 @@ PAPER_OVERALL = np.array(
     ]
 )
 PAPER_MDV_STAR = np.array([[0.7730], [0.0372], [0.0183], [0.1715]])
+# §3.7 step 7 output with f_unlabelled=0.01
+PAPER_MDV_AA = np.array([[0.7710], [0.0373], [0.0185], [0.1732]])
+# §3.7 step 7 MDV_unlabelled,3 (natural abundance of 3 C atoms only)
+PAPER_MDV_UNLABELLED_3 = np.array([[0.9683], [0.0314], [0.0003], [0.0000]])
 
 # Pyruvate / citrate values are implementation snapshots (no published example
 # in the paper) — they pin behaviour but not published truth.
@@ -121,19 +125,21 @@ def test_mdv_star_normalised_to_one():
     assert abs(ala.mdv_star().sum() - 1.0) < 1e-3
 
 
-def test_mdv_AA_returns_vector():
+def test_mdv_unlabelled_matches_paper():
+    ala = SITA_module.LabelledCompound(
+        formula="C11H26NO2Si2", labelled_element="C", backbone_c=3
+    )
+    np.testing.assert_allclose(ala.mdv_unlabelled(), PAPER_MDV_UNLABELLED_3, atol=1e-3)
+
+
+def test_mdv_AA_matches_paper():
     ala = SITA_module.LabelledCompound(
         formula="C11H26NO2Si2",
         labelled_element="C",
         backbone_c=3,
         mdv_a=[0.6228, 0.1517, 0.0749, 0.1507],
     )
-    aa = ala.mdv_AA(
-        base_aa_formula="C11H26NO2Si2",
-        base_aa_mdv=[0.6228, 0.1517, 0.0749, 0.1507],
-        base_aa_backbone_c=3,
-    )
-    assert aa.shape == (4, 1)
+    np.testing.assert_allclose(ala.mdv_AA(f_unlabelled=0.01), PAPER_MDV_AA, atol=1e-3)
 
 
 def test_backbone_c_required():
@@ -170,7 +176,8 @@ TESTS = [
     test_citrate_shape_and_structure,
     test_multi_isotope_summation,
     test_mdv_star_normalised_to_one,
-    test_mdv_AA_returns_vector,
+    test_mdv_unlabelled_matches_paper,
+    test_mdv_AA_matches_paper,
     test_backbone_c_required,
     test_backbone_c_exceeds_formula,
     test_vector_size_exceeds_backbone,

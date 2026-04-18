@@ -28,10 +28,11 @@ fragment that are **subject to 13C labelling** in the tracer experiment. These
 positions are excluded from the natural-abundance correction because their
 labelling IS the measurement signal.
 
-Example: alanine M-57 is the fragment `C8H23NO2Si2`. Eight total carbons, but
-only three originate from alanine — the other five come from the TBDMS
-derivatizing reagent. So `backbone_c=3`. The MDV length defaults to
-`backbone_c + 1` (i.e. M+0 through M+3).
+Example: alanine M-57 is the fragment `C11H26NO2Si2` (Nanchen 2007 Table 1,
+mass 260). Eleven total carbons — three from the alanine backbone, eight
+from the two TBDMS groups after loss of the tert-butyl (C4H9). So
+`backbone_c=3`. The MDV length defaults to `backbone_c + 1` (i.e. M+0
+through M+3).
 
 ## CSV batch
 
