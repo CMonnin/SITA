@@ -1,0 +1,16 @@
+[project]
+name = "sita-core"
+version = "0.1.0"
+description = "Natural-abundance correction for GC-MS mass distribution vectors from 13C stable-isotope tracer experiments"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sita_core"]

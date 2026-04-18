@@ -2,57 +2,23 @@ import itertools
 import logging
 import math
 import re
-import sys
 from collections import Counter
 
 import numpy as np
 
-# ------------------------------------------------------
-# setting up a logger to print to std out and to a file
-# creating logger and handlers
-logger = logging.getLogger("logger")
-logger.setLevel(logging.INFO)
-console_handler = logging.StreamHandler(sys.stdout)
-file_handler = logging.FileHandler("log.log")
+from sita_core.isotope_data import ISOTOPE_ABUNDANCE_DICT_UNIT_MASS
 
-# setting up formating for the handlers
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-quiet_formatter = logging.Formatter("%(message)s")
-file_handler.setFormatter(formatter)
-console_handler.setFormatter(quiet_formatter)
+logger = logging.getLogger("sita_core")
 
-# adding the handlers to the logger
-logger.addHandler(console_handler)
-logger.addHandler(file_handler)
-# -------------------------------------------------------
-# correction of natural abundance
+# Correction of natural abundance:
 # MDV_star = Corr^-1 dot MDVa
-# MDV_star: Corrected Istopic Mass Distribution Vector
-# Corr^-1: Inverse of correction matrix
-# MDVa = Experimentally measured Mass distrubtion vector normalised to 1
-# ----------------------------------------------------------------------
-# TODO adducts Ca, Na, NH4, FA, AA, Li,
-# TODO: correct for contribtuion by unalblled mass
-# -----------------------------------------------------------------------
-# dict of the natural abundance of common elements
-# Source:
-# Coursey, J. S., et al. "Atomic weights and isotopic compositions with
-# relative atomic masses." NIST Physical Measurement Laboratory (2015).
-# https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl Added some additional isotopes at 0% abundance for ease of logic later on
-ISOTOPE_ABUNDANCE_DICT_UNIT_MASS = {
-    "H": {"abundance": (0.999885, 0.000115), "mass": (1, 2)},
-    "C": {"abundance": (0.9893, 0.0107), "mass": (12, 13)},
-    "N": {"abundance": (0.99636, 0.00364), "mass": (14, 15)},
-    "O": {"abundance": (0.99757, 0.00038, 0.00205), "mass": (16, 17, 18)},
-    "Si": {"abundance": (0.92223, 0.04685, 0.03092), "mass": (28, 29, 30)},
-    "P": {"abundance": (1), "mass": (31)},
-    "S": {
-        "abundance": (0.9499, 0.0075, 0.0425, 0, 0.0001),
-        "mass": (32, 33, 34, 35, 36),
-    },
-    "Cl": {"abundance": (0.7576, 0, 0.2424), "mass": (35, 36, 37)},
-    "Br": {"abundance": (0.5069, 0, 0.4931), "mass": (79, 80, 81)},
-}
+#
+# MDV_star: Corrected Isotopic Mass Distribution Vector
+# Corr^-1:  Inverse of correction matrix
+# MDVa:     Experimentally measured mass distribution vector normalised to 1
+#
+# TODO: adducts Ca, Na, NH4, FA, AA, Li
+# TODO: correct for contribution by unlabelled mass
 
 
 class LabelledCompound:
@@ -70,7 +36,7 @@ class LabelledCompound:
         Parameters
         ----------
         formula = the chemical formula of the compound or fragment
-        labelled_element = which element is lablled (currently only supports one labelled_element)
+        labelled_element = which element is labelled (currently only supports one labelled_element)
         backbone_c = number of atoms of the labelled element that are subject to
             the tracer experiment (e.g. 3 for alanine's backbone, even though the
             TBDMS fragment C8H23NO2Si2 contains 8 C total). These positions carry
@@ -182,7 +148,7 @@ class LabelledCompound:
         else:
             number_of_atoms = self.formula_dict[element_ID]
         # the isotope counter will determine the values for the
-        # equations eg #istope_1 ...
+        # equations eg #isotope_1 ...
         # eg for M+1 in alanine considering carbon
         # (0,0,1) will be passed as the combination
         # and will result in a counter (0:2,1:1)
@@ -245,7 +211,7 @@ class LabelledCompound:
         correction_matrix = np.linalg.inv(correction_matrix)
         correction_matrix = np.round(correction_matrix, 4)
         logger.info(f"corr matrix: \n{correction_matrix}")
-        if save_to_text == True:
+        if save_to_text is True:
             file_name = self.formula + ".csv"
             np.savetxt(file_name, correction_matrix, delimiter=",")
         return correction_matrix

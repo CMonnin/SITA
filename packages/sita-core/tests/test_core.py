@@ -1,18 +1,7 @@
-import logging
-import sys
-
 import numpy as np
+import pytest
 
-import SITA_module
-
-logger = logging.getLogger("logger")
-logger.propagate = False
-logger.setLevel(logging.WARNING)
-if not logger.handlers:
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter("%(message)s"))
-    logger.addHandler(handler)
-
+from sita_core import LabelledCompound
 
 # Expected values verified against Nanchen, Fuhrer & Sauer (2007),
 # "Determination of metabolic flux ratios from 13C-experiments and GC-MS data",
@@ -41,13 +30,13 @@ PAPER_OVERALL = np.array(
     ]
 )
 PAPER_MDV_STAR = np.array([[0.7730], [0.0372], [0.0183], [0.1715]])
-# §3.7 step 7 output with f_unlabelled=0.01
+# 3.7 step 7 output with f_unlabelled=0.01
 PAPER_MDV_AA = np.array([[0.7710], [0.0373], [0.0185], [0.1732]])
-# §3.7 step 7 MDV_unlabelled,3 (natural abundance of 3 C atoms only)
+# 3.7 step 7 MDV_unlabelled,3 (natural abundance of 3 C atoms only)
 PAPER_MDV_UNLABELLED_3 = np.array([[0.9683], [0.0314], [0.0003], [0.0000]])
 
 # Pyruvate / citrate values are implementation snapshots (no published example
-# in the paper) — they pin behaviour but not published truth.
+# in the paper) -- they pin behaviour but not published truth.
 PYRUVATE_CORR_INV = np.array(
     [
         [1.1338, 0.0000, 0.0000, 0.0000],
@@ -59,8 +48,7 @@ PYRUVATE_CORR_INV = np.array(
 
 
 def test_alanine_c_only_matrix_matches_paper():
-    # Ccorr,C only — isolate by feeding a C-only formula with backbone_c=3.
-    c_only = SITA_module.LabelledCompound(
+    c_only = LabelledCompound(
         formula="C11", labelled_element="C", backbone_c=3
     )
     pre_inverse = np.linalg.inv(c_only.correction_matrix())
@@ -68,7 +56,7 @@ def test_alanine_c_only_matrix_matches_paper():
 
 
 def test_alanine_overall_matrix_matches_paper():
-    ala = SITA_module.LabelledCompound(
+    ala = LabelledCompound(
         formula="C11H26NO2Si2", labelled_element="C", backbone_c=3
     )
     pre_inverse = np.linalg.inv(ala.correction_matrix())
@@ -76,7 +64,7 @@ def test_alanine_overall_matrix_matches_paper():
 
 
 def test_alanine_corrected_mdv_matches_paper():
-    ala = SITA_module.LabelledCompound(
+    ala = LabelledCompound(
         formula="C11H26NO2Si2",
         labelled_element="C",
         backbone_c=3,
@@ -86,14 +74,14 @@ def test_alanine_corrected_mdv_matches_paper():
 
 
 def test_pyruvate_correction_matrix():
-    pyr = SITA_module.LabelledCompound(
+    pyr = LabelledCompound(
         formula="H12C6N1O3Si1", labelled_element="C", backbone_c=3
     )
     np.testing.assert_allclose(pyr.correction_matrix(), PYRUVATE_CORR_INV, atol=1e-3)
 
 
 def test_citrate_shape_and_structure():
-    cit = SITA_module.LabelledCompound(
+    cit = LabelledCompound(
         formula="H39C20O6Si3", labelled_element="C", backbone_c=6
     )
     corr = cit.correction_matrix()
@@ -106,7 +94,7 @@ def test_multi_isotope_summation():
     # combos: (28,30) and (29,29). The prior bug used only the first; with the
     # fix, both contribute. Verify a Si-only fragment produces non-zero at the
     # sub-subdiagonal (mass shift +2).
-    si = SITA_module.LabelledCompound(formula="C3Si2", labelled_element="C", backbone_c=2)
+    si = LabelledCompound(formula="C3Si2", labelled_element="C", backbone_c=2)
     corr_inv = si.correction_matrix()
     pre = np.linalg.inv(corr_inv)
     # Expected Si contribution at mass-shift 2 = 2*c28*c30 + c29^2
@@ -116,7 +104,7 @@ def test_multi_isotope_summation():
 
 
 def test_mdv_star_normalised_to_one():
-    ala = SITA_module.LabelledCompound(
+    ala = LabelledCompound(
         formula="C11H26NO2Si2",
         labelled_element="C",
         backbone_c=3,
@@ -126,14 +114,14 @@ def test_mdv_star_normalised_to_one():
 
 
 def test_mdv_unlabelled_matches_paper():
-    ala = SITA_module.LabelledCompound(
+    ala = LabelledCompound(
         formula="C11H26NO2Si2", labelled_element="C", backbone_c=3
     )
     np.testing.assert_allclose(ala.mdv_unlabelled(), PAPER_MDV_UNLABELLED_3, atol=1e-3)
 
 
 def test_mdv_AA_matches_paper():
-    ala = SITA_module.LabelledCompound(
+    ala = LabelledCompound(
         formula="C11H26NO2Si2",
         labelled_element="C",
         backbone_c=3,
@@ -143,60 +131,17 @@ def test_mdv_AA_matches_paper():
 
 
 def test_backbone_c_required():
-    try:
-        SITA_module.LabelledCompound(formula="C3H7NO2", labelled_element="C", backbone_c=None)
-    except ValueError:
-        return
-    raise AssertionError("expected ValueError when backbone_c is None")
+    with pytest.raises(ValueError):
+        LabelledCompound(formula="C3H7NO2", labelled_element="C", backbone_c=None)
 
 
 def test_backbone_c_exceeds_formula():
-    try:
-        SITA_module.LabelledCompound(formula="C3H7NO2", labelled_element="C", backbone_c=4)
-    except ValueError:
-        return
-    raise AssertionError("expected ValueError when backbone_c > total C in formula")
+    with pytest.raises(ValueError):
+        LabelledCompound(formula="C3H7NO2", labelled_element="C", backbone_c=4)
 
 
 def test_vector_size_exceeds_backbone():
-    try:
-        SITA_module.LabelledCompound(
+    with pytest.raises(ValueError):
+        LabelledCompound(
             formula="C3H7NO2", labelled_element="C", backbone_c=3, vector_size=5
         )
-    except ValueError:
-        return
-    raise AssertionError("expected ValueError when vector_size > backbone_c + 1")
-
-
-TESTS = [
-    test_alanine_c_only_matrix_matches_paper,
-    test_alanine_overall_matrix_matches_paper,
-    test_alanine_corrected_mdv_matches_paper,
-    test_pyruvate_correction_matrix,
-    test_citrate_shape_and_structure,
-    test_multi_isotope_summation,
-    test_mdv_star_normalised_to_one,
-    test_mdv_unlabelled_matches_paper,
-    test_mdv_AA_matches_paper,
-    test_backbone_c_required,
-    test_backbone_c_exceeds_formula,
-    test_vector_size_exceeds_backbone,
-]
-
-
-def main():
-    failures = 0
-    for fn in TESTS:
-        try:
-            fn()
-            print(f"PASS  {fn.__name__}")
-        except Exception as e:
-            failures += 1
-            print(f"FAIL  {fn.__name__}: {e}")
-    if failures:
-        sys.exit(1)
-    print(f"\n{len(TESTS)} passed")
-
-
-if __name__ == "__main__":
-    main()

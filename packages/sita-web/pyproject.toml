@@ -1,0 +1,27 @@
+[project]
+name = "sita-web"
+version = "0.1.0"
+description = "Flask web interface and CLI for SITA natural-abundance correction"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "sita-core",
+    "flask>=3.0",
+    "pandas>=2.1",
+    "openpyxl>=3.1",
+    "gunicorn>=21.2",
+]
+
+[project.scripts]
+sita-batch = "sita_web.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sita_web"]
+
+
+[tool.uv.sources]
+sita-core = { workspace = true }
