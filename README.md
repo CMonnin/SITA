@@ -1,50 +1,88 @@
 # SITA
 
-## Purpose
-This app was created to aid in stable isotope tracer analysis (SITA) experiments.  
-It is used to determine the inverted correction matrix to correct for natural abudnace in analaytes of interest.
+Natural-abundance correction for GC-MS mass distribution vectors (MDVs) from
+13C stable-isotope tracer experiments. Given a fragment's molecular formula
+and its labelled-backbone carbon count, SITA returns the natural-abundance
+correction matrix and the corrected MDV*.
 
-## Features
-- Enter a chemical formula to obtain an inverted correction matrix for the analyte. Currently this is set to M+4.  Functionality will be expanded to M+n. 
+A live version is hosted at
+[sita-app.up.railway.app](https://sita-app.up.railway.app/).
 
-## How to use
-A live version of this app is currently available at https://sita-app.up.railway.app/  
-This repo also allows you to run a local version in your browser.  
-### To run a local version
+## Quick start
 
-##### Prerequsites
-- Python => 3.10
-- https://www.python.org/
+Requires Python 3.10+. This project uses [uv](https://docs.astral.sh/uv/)
+for ephemeral environments; no `pyproject.toml` is checked in.
 
-#### Set up
-- Clone this repo either by downloading or using  
-`$ git clone https://github.com/CMonnin/SITA.git`  
-- Once you've cloned the repo `$ cd` into the directory and create a virtual environment.  
-- For example: `$ python -m venv venv`  
-- Active your venv: `$ source venv/bin/activate`
-- Install requirements `$ pip install -r requirements.txt`  
-- You should now be able to run a server locally in your browser using:`$ python app.py`
+```
+git clone https://github.com/CMonnin/SITA.git
+cd SITA
+uv run --with-requirements requirements.txt python app.py
+```
 
-## Tech Stack
-- Python, numpy for backend matrix calculations
-- Plotly Dash for frontend
-- Railway for hosting
+Then open http://127.0.0.1:5000.
 
-## Citations
-- Natural abudnace of common elements: Coursey, J. S., et al. "Atomic weights and isotopic compositions with relative atomic masses." NIST Physical Measurement Laboratory (2015).
- https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl 
-- Nanchen, Annik, Tobias Fuhrer, and Uwe Sauer. "Determination of metabolic flux ratios from 13 C-experiments and gas chromatography-mass spectrometry data: protocol and principles." Metabolomics: Methods and protocols (2007): 177-197.
+## Usage
+
+The web UI has two sections:
+
+1. **Correction matrix** — enter a molecular formula and the number of
+   backbone carbons; returns the natural-abundance correction matrix.
+2. **Corrected MDV (MDV\*)** — additionally enter a measured MDV; returns
+   the natural-abundance-corrected MDV.
+
+### `backbone_c`
+
+Every compound requires a `backbone_c` argument: the number of carbons in
+the fragment that are **subject to 13C labelling** in the tracer experiment.
+These positions are excluded from the natural-abundance correction because
+their labelling is the measurement signal (per Fischer & Zamboni 2004).
+
+Example: alanine M-57 is the fragment `C11H26NO2Si2` (Nanchen 2007 Table 1,
+mass 260). Eleven total carbons — three from the alanine backbone, eight
+from the two TBDMS groups after loss of the tert-butyl (C4H9). So
+`backbone_c=3`. The MDV length defaults to `backbone_c + 1` (M+0 … M+n).
+
+### CSV batch
+
+For batch processing, provide a CSV with columns `name, formula, backbone_c`
+(one header row) and run:
+
+```
+uv run --with-requirements requirements.txt python parser_test.py
+```
+
+Output is `output.xlsx` with one sheet per compound.
+
+## Tech stack
+
+- Python + numpy for the correction math (`SITA_module.py`)
+- Flask serving a vanilla-JS frontend (`templates/`, `static/`)
+- Deployed on Railway
+
+## References
+
+The mathematical basis follows:
+
+- Nanchen, A., Fuhrer, T., Sauer, U. (2007). *Determination of Metabolic
+  Flux Ratios From 13C-Experiments and Gas Chromatography-Mass Spectrometry
+  Data: Protocol and Principles.* In: Metabolomics (Methods in Molecular
+  Biology 358), Humana Press, pp. 177-197.
+  doi:[10.1007/978-1-59745-244-1_11](https://doi.org/10.1007/978-1-59745-244-1_11)
+- Fischer, E., Zamboni, N., Sauer, U. (2004). *High-throughput metabolic
+  flux analysis based on gas chromatography-mass spectrometry derived 13C
+  constraints.* Analytical Biochemistry 325(2):308-316.
+  doi:[10.1016/j.ab.2003.10.036](https://doi.org/10.1016/j.ab.2003.10.036)
+
+Natural isotope abundances are from Coursey, J. S., et al. *Atomic weights
+and isotopic compositions with relative atomic masses.* NIST Physical
+Measurement Laboratory (2015).
+[physics.nist.gov](https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl)
+
+The correction matrix and worked example pinned in `test.py` come from
+Nanchen 2007, §3.7 (alanine M-57 fragment).
 
 ## Contributing
-This is an open-source project. Contribution are welcome.  
-Please fork the repo, make changes, and perform a pull request.  
-If you'd like a feature to be added please open an issue or reach out to me: `cianmonnin at gmail dot com`  
 
-## Dev branch
-This is very much a work in progress. The dev branch has new features I'm slowly working on.
-
-## Release History
-- 0.1.0 Initial Release
-
-
-
+This is an open-source project — contributions are welcome. Fork the repo,
+make changes, and open a pull request. For feature requests or bug reports,
+open an issue or reach out at `cianmonnin at gmail dot com`.
