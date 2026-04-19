@@ -1,1 +1,1 @@
-web: gunicorn app:server
+web: gunicorn "sita_web.app:create_app()"

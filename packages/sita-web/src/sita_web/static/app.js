@@ -1,8 +1,6 @@
 (() => {
   'use strict';
 
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
   const fmt = (v) => {
     if (v === 0) return '0.0000';
     return Number(v).toFixed(4);
@@ -120,14 +118,14 @@
     el.style.color = color || '';
   }
 
-  function wireMatrixForm() {
-    const form = document.getElementById('form-matrix');
-    const errorEl = document.getElementById('matrix-error');
+  function wireForm({ prefix, url, responseKey, variant, capLabel, extraFields = [] }) {
+    const form = document.getElementById(`form-${prefix}`);
+    const errorEl = document.getElementById(`${prefix}-error`);
     const submitBtn = form.querySelector('button[type="submit"]');
-    const result = document.getElementById('matrix-result');
-    const tableContainer = document.getElementById('matrix-table');
-    const capTitle = document.getElementById('matrix-cap');
-    const capTime = document.getElementById('matrix-time');
+    const result = document.getElementById(`${prefix}-result`);
+    const tableContainer = document.getElementById(`${prefix}-table`);
+    const capTitle = document.getElementById(`${prefix}-cap`);
+    const capTime = document.getElementById(`${prefix}-time`);
     const copyBtn = result.querySelector('.copy');
 
     let lastCsv = '';
@@ -139,11 +137,16 @@
       submitBtn.dataset.pending = 'true';
       setStatus('computing…', 'var(--yellow)');
 
-      const formula = form.elements.formula.value.trim();
       const backboneRaw = form.elements.backbone_c.value;
-      const backbone_c = backboneRaw === '' ? null : Number(backboneRaw);
+      const payload = {
+        formula: form.elements.formula.value.trim(),
+        backbone_c: backboneRaw === '' ? null : Number(backboneRaw),
+      };
+      for (const field of extraFields) {
+        payload[field] = form.elements[field].value.trim();
+      }
 
-      const { ok, elapsed, data } = await submitJson('/api/matrix', { formula, backbone_c });
+      const { ok, elapsed, data } = await submitJson(url, payload);
       submitBtn.dataset.pending = 'false';
 
       if (!ok || data.error) {
@@ -153,53 +156,9 @@
         return;
       }
 
-      const n = data.matrix.length;
-      renderTable(tableContainer, data.matrix, 'matrix');
-      capTitle.textContent = `${n} × ${n} correction matrix`;
-      capTime.textContent = `ready · ${elapsed.toFixed(0)}ms`;
-      lastCsv = data.csv;
-      result.hidden = false;
-      setStatus('ready', 'var(--green)');
-    });
-  }
-
-  function wireMdvForm() {
-    const form = document.getElementById('form-mdv');
-    const errorEl = document.getElementById('mdv-error');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const result = document.getElementById('mdv-result');
-    const tableContainer = document.getElementById('mdv-table');
-    const capTitle = document.getElementById('mdv-cap');
-    const capTime = document.getElementById('mdv-time');
-    const copyBtn = result.querySelector('.copy');
-
-    let lastCsv = '';
-    attachCopy(copyBtn, () => lastCsv);
-
-    form.addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      errorEl.textContent = '';
-      submitBtn.dataset.pending = 'true';
-      setStatus('computing…', 'var(--yellow)');
-
-      const formula = form.elements.formula.value.trim();
-      const backboneRaw = form.elements.backbone_c.value;
-      const backbone_c = backboneRaw === '' ? null : Number(backboneRaw);
-      const mdv = form.elements.mdv.value.trim();
-
-      const { ok, elapsed, data } = await submitJson('/api/mdv-star', { formula, backbone_c, mdv });
-      submitBtn.dataset.pending = 'false';
-
-      if (!ok || data.error) {
-        errorEl.textContent = `error: ${data.error || 'request failed'}`;
-        result.hidden = true;
-        setStatus('error', 'var(--red)');
-        return;
-      }
-
-      const n = data.mdv_star.length;
-      renderTable(tableContainer, data.mdv_star, 'vector');
-      capTitle.textContent = `${n} × 1 corrected mdv`;
+      const rows = data[responseKey];
+      renderTable(tableContainer, rows, variant);
+      capTitle.textContent = capLabel(rows.length);
       capTime.textContent = `ready · ${elapsed.toFixed(0)}ms`;
       lastCsv = data.csv;
       result.hidden = false;
@@ -208,7 +167,20 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    wireMatrixForm();
-    wireMdvForm();
+    wireForm({
+      prefix: 'matrix',
+      url: '/api/matrix',
+      responseKey: 'matrix',
+      variant: 'matrix',
+      capLabel: (n) => `${n} × ${n} correction matrix`,
+    });
+    wireForm({
+      prefix: 'mdv',
+      url: '/api/mdv-star',
+      responseKey: 'mdv_star',
+      variant: 'vector',
+      capLabel: (n) => `${n} × 1 corrected mdv`,
+      extraFields: ['mdv'],
+    });
   });
 })();

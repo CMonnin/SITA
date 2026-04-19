@@ -8,15 +8,22 @@ correction matrix and the corrected MDV*.
 A live version is hosted at
 [sita-app.up.railway.app](https://sita-app.up.railway.app/).
 
+## Project structure
+
+This repo is a [UV workspace](https://docs.astral.sh/uv/concepts/workspaces/) with two packages:
+
+- **`sita-core`** — pure algorithm library (numpy only). The `LabelledCompound` class and isotope data.
+- **`sita-web`** — Flask web UI, REST API, and batch CLI. Depends on `sita-core`.
+
 ## Quick start
 
-Requires Python 3.10+. This project uses [uv](https://docs.astral.sh/uv/)
-for ephemeral environments; no `pyproject.toml` is checked in.
+Requires Python 3.10+ and [uv](https://docs.astral.sh/uv/).
 
-```
+```bash
 git clone https://github.com/CMonnin/SITA.git
 cd SITA
-uv run --with-requirements requirements.txt python app.py
+uv sync
+uv run python -m sita_web.app
 ```
 
 Then open http://127.0.0.1:5000.
@@ -40,23 +47,31 @@ their labelling is the measurement signal (per Fischer & Zamboni 2004).
 Example: alanine M-57 is the fragment `C11H26NO2Si2` (Nanchen 2007 Table 1,
 mass 260). Eleven total carbons — three from the alanine backbone, eight
 from the two TBDMS groups after loss of the tert-butyl (C4H9). So
-`backbone_c=3`. The MDV length defaults to `backbone_c + 1` (M+0 … M+n).
+`backbone_c=3`. The MDV length defaults to `backbone_c + 1` (M+0 ... M+n).
 
-### CSV batch
+### Running tests
 
-For batch processing, provide a CSV with columns `name, formula, backbone_c`
-(one header row) and run:
-
-```
-uv run --with-requirements requirements.txt python parser_test.py
+```bash
+uv run pytest
 ```
 
-Output is `output.xlsx` with one sheet per compound.
+### Using the core library programmatically
+
+```python
+from sita_core import LabelledCompound
+
+compound = LabelledCompound(
+    formula="C11H26NO2Si2",
+    labelled_element="C",
+    backbone_c=3,
+)
+matrix = compound.correction_matrix()
+```
 
 ## Tech stack
 
-- Python + numpy for the correction math (`SITA_module.py`)
-- Flask serving a vanilla-JS frontend (`templates/`, `static/`)
+- **sita-core**: Python + numpy for the correction math
+- **sita-web**: Flask serving a vanilla-JS frontend
 - Deployed on Railway
 
 ## References
@@ -78,7 +93,7 @@ and isotopic compositions with relative atomic masses.* NIST Physical
 Measurement Laboratory (2015).
 [physics.nist.gov](https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl)
 
-The correction matrix and worked example pinned in `test.py` come from
+The correction matrix and worked example in the test suite come from
 Nanchen 2007, §3.7 (alanine M-57 fragment).
 
 ## Contributing

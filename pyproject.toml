@@ -1,0 +1,5 @@
+[tool.uv.workspace]
+members = ["packages/sita-core", "packages/sita-web"]
+
+[tool.uv]
+dev-dependencies = ["pytest>=8"]
