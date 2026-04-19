@@ -2,10 +2,27 @@
 name = "sita-web"
 version = "0.1.0"
 description = "Flask web interface and CLI for SITA natural-abundance correction"
+readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
+authors = [{ name = "Cian Monnin", email = "cianmonnin@gmail.com" }]
+keywords = ["metabolomics", "mass-spectrometry", "isotope", "GC-MS", "13C", "flask"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Framework :: Flask",
+    "Environment :: Web Environment",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
 dependencies = [
-    "sita-core",
+    "sita-core>=0.1.0",
     "flask>=3.0",
     "pandas>=2.1",
     "openpyxl>=3.1",
@@ -14,6 +31,11 @@ dependencies = [
 
 [project.scripts]
 sita-batch = "sita_web.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/CMonnin/SITA"
+Source = "https://github.com/CMonnin/SITA"
+Issues = "https://github.com/CMonnin/SITA/issues"
 
 [build-system]
 requires = ["hatchling"]
