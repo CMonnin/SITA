@@ -1,6 +1,6 @@
 # sita-web
 
-Flask web interface and batch CLI for [SITA](https://github.com/CMonnin/SITA)
+Flask web interface for [SITA](https://github.com/CMonnin/SITA)
 natural-abundance correction of GC-MS mass distribution vectors.
 
 ## Install
