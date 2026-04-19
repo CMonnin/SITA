@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "SITA: natural-abundance correction for 13C GC-MS MDV"
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: Monnin 
+    given-names: Cian 
+    orcid: https://orcid.org/0000-0002-8894-1571
+version: 0.1.0
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.19647450
+date-released: 2026-04-18

@@ -3,7 +3,7 @@
 Natural-abundance correction for GC-MS mass distribution vectors (MDVs) from
 13C stable-isotope tracer experiments. Given a fragment's molecular formula
 and its labelled-backbone carbon count, SITA returns the natural-abundance
-correction matrix and the corrected MDV*.
+correction matrix and the corrected MDV\*.
 
 A live version is hosted at
 [sita-app.up.railway.app](https://sita-app.up.railway.app/).
@@ -13,7 +13,7 @@ A live version is hosted at
 This repo is a [UV workspace](https://docs.astral.sh/uv/concepts/workspaces/) with two packages:
 
 - **`sita-core`** — pure algorithm library (numpy only). The `LabelledCompound` class and isotope data.
-- **`sita-web`** — Flask web UI, REST API, and batch CLI. Depends on `sita-core`.
+- **`sita-web`** — Flask web UI, REST API. Depends on `sita-core`.
 
 ## Quick start
 
@@ -74,22 +74,26 @@ matrix = compound.correction_matrix()
 - **sita-web**: Flask serving a vanilla-JS frontend
 - Deployed on Railway
 
+## Citation
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19647450.svg)](https://doi.org/10.5281/zenodo.19647450)
+
 ## References
 
 The mathematical basis follows:
 
-- Nanchen, A., Fuhrer, T., Sauer, U. (2007). *Determination of Metabolic
+- Nanchen, A., Fuhrer, T., Sauer, U. (2007). _Determination of Metabolic
   Flux Ratios From 13C-Experiments and Gas Chromatography-Mass Spectrometry
-  Data: Protocol and Principles.* In: Metabolomics (Methods in Molecular
+  Data: Protocol and Principles._ In: Metabolomics (Methods in Molecular
   Biology 358), Humana Press, pp. 177-197.
   doi:[10.1007/978-1-59745-244-1_11](https://doi.org/10.1007/978-1-59745-244-1_11)
-- Fischer, E., Zamboni, N., Sauer, U. (2004). *High-throughput metabolic
+- Fischer, E., Zamboni, N., Sauer, U. (2004). _High-throughput metabolic
   flux analysis based on gas chromatography-mass spectrometry derived 13C
-  constraints.* Analytical Biochemistry 325(2):308-316.
+  constraints._ Analytical Biochemistry 325(2):308-316.
   doi:[10.1016/j.ab.2003.10.036](https://doi.org/10.1016/j.ab.2003.10.036)
 
-Natural isotope abundances are from Coursey, J. S., et al. *Atomic weights
-and isotopic compositions with relative atomic masses.* NIST Physical
+Natural isotope abundances are from Coursey, J. S., et al. _Atomic weights
+and isotopic compositions with relative atomic masses._ NIST Physical
 Measurement Laboratory (2015).
 [physics.nist.gov](https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl)
 
