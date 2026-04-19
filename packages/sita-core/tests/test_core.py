@@ -140,8 +140,11 @@ def test_backbone_c_exceeds_formula():
         LabelledCompound(formula="C3H7NO2", labelled_element="C", backbone_c=4)
 
 
-def test_vector_size_exceeds_backbone():
+def test_mdv_a_length_mismatch():
     with pytest.raises(ValueError):
         LabelledCompound(
-            formula="C3H7NO2", labelled_element="C", backbone_c=3, vector_size=5
+            formula="C3H7NO2",
+            labelled_element="C",
+            backbone_c=3,
+            mdv_a=[0.5, 0.5],
         )

@@ -28,7 +28,6 @@ class LabelledCompound:
         labelled_element: str,
         backbone_c: int,
         mdv_a=None,
-        vector_size=None,
     ):
         """
         Each compound will have a molecular formula and
@@ -43,10 +42,7 @@ class LabelledCompound:
             the measurement signal and are excluded from the natural-abundance
             correction per Fischer & Zamboni (2007).
         mdv_a = a list of numbers corresponding to the observed ratio of isotopes, the sum
-            of these ratios needs to equal 1.
-        vector_size = optional override for the MDV length. Defaults to backbone_c + 1
-            (covers M+0 ... M+backbone_c). Provide explicitly only if a truncated
-            MDV is measured.
+            of these ratios needs to equal 1. Length must equal backbone_c + 1.
         """
         self.formula = formula
         self.labelled_element = labelled_element if labelled_element else "C"
@@ -69,13 +65,14 @@ class LabelledCompound:
 
         if backbone_c is None:
             raise ValueError("backbone_c is required")
-        total_labelled = self.formula_dict.get(self.labelled_element, 0)
+        total_labelled = self.formula_dict[self.labelled_element]
         if backbone_c < 0 or backbone_c > total_labelled:
             raise ValueError(
                 f"backbone_c={backbone_c} must be between 0 and the "
                 f"{self.labelled_element} count in the formula ({total_labelled})"
             )
         self.backbone_c = backbone_c
+        self.vector_size = backbone_c + 1
 
         if mdv_a is not None:
             if not isinstance(mdv_a, list):
@@ -85,16 +82,10 @@ class LabelledCompound:
             else:
                 self.mdv_a = np.array(mdv_a)
             self.mdv_a = self.mdv_a.reshape(-1, 1)
-            self.vector_size = self.mdv_a.size
-        elif vector_size:
-            self.vector_size = vector_size
-        else:
-            self.vector_size = backbone_c + 1
-
-        if self.vector_size > backbone_c + 1:
-            raise ValueError(
-                f"vector_size={self.vector_size} exceeds backbone_c+1={backbone_c + 1}"
-            )
+            if self.mdv_a.size != self.vector_size:
+                raise ValueError(
+                    f"mdv_a length {self.mdv_a.size} != backbone_c+1 {self.vector_size}"
+                )
         logger.debug(f" vector_size: {self.vector_size}")
 
     def matrix_generator(self):
@@ -209,7 +200,7 @@ class LabelledCompound:
         logger.debug(element_matrix)
         return element_matrix
 
-    def correction_matrix(self, save_to_text=False):
+    def correction_matrix(self):
         correction_matrix = np.identity(self.vector_size)
         for element, count in self.formula_dict.items():
             if element == self.labelled_element:
@@ -224,11 +215,7 @@ class LabelledCompound:
             logger.debug(f"matrix for {element}: \n{current_matrix}")
             correction_matrix = np.dot(correction_matrix, current_matrix)
         correction_matrix = np.linalg.inv(correction_matrix)
-        # correction_matrix = np.round(correction_matrix, 4)
         logger.info(f"corr matrix: \n{correction_matrix}")
-        if save_to_text is True:
-            file_name = self.formula + ".csv"
-            np.savetxt(file_name, correction_matrix, delimiter=",")
         return correction_matrix
 
     def mdv_star(self):
