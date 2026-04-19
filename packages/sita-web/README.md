@@ -15,13 +15,5 @@ pip install sita-web
 gunicorn "sita_web.app:create_app()"
 ```
 
-## Batch CLI
-
-```
-sita-batch input.csv -o output.xlsx
-```
-
-Input CSV columns: `name, formula, backbone_c`.
-
 See the [project repository](https://github.com/CMonnin/SITA) for details and
 the underlying `sita-core` library.

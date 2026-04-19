@@ -49,15 +49,6 @@ mass 260). Eleven total carbons — three from the alanine backbone, eight
 from the two TBDMS groups after loss of the tert-butyl (C4H9). So
 `backbone_c=3`. The MDV length defaults to `backbone_c + 1` (M+0 ... M+n).
 
-### CSV batch
-
-For batch processing, provide a CSV with columns `name, formula, backbone_c`
-(one header row) and run:
-
-```bash
-uv run sita-batch template.csv -o output.xlsx
-```
-
 ### Running tests
 
 ```bash

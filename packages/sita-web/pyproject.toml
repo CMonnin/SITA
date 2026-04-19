@@ -24,13 +24,8 @@ classifiers = [
 dependencies = [
     "sita-core>=0.1.0",
     "flask>=3.0",
-    "pandas>=2.1",
-    "openpyxl>=3.1",
     "gunicorn>=21.2",
 ]
-
-[project.scripts]
-sita-batch = "sita_web.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/CMonnin/SITA"
