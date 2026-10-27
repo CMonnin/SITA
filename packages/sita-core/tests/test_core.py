@@ -148,3 +148,32 @@ def test_mdv_a_length_mismatch():
             backbone_c=3,
             mdv_a=[0.5, 0.5],
         )
+
+
+def test_large_compound():
+    # Previously overflowed (factorial(200) * float) or enumerated every
+    # isotope combination; large derivatised compounds must still work.
+    big = LabelledCompound(
+        formula="C60H200N2O8Si12S2", labelled_element="C", backbone_c=20
+    )
+    corr = big.correction_matrix()
+    assert corr.shape == (21, 21)
+    assert np.all(np.isfinite(corr))
+
+
+def test_backbone_c_ceiling():
+    with pytest.raises(ValueError):
+        LabelledCompound(formula="C1000", labelled_element="C", backbone_c=999)
+
+
+def test_atom_count_ceiling():
+    with pytest.raises(ValueError):
+        LabelledCompound(formula="C3Si1000000", labelled_element="C", backbone_c=3)
+
+
+def test_uninvertible_matrix_is_value_error():
+    # Si abundance at M+0 underflows to zero for this many atoms
+    with pytest.raises(ValueError):
+        LabelledCompound(
+            formula="C3Si90000", labelled_element="C", backbone_c=3
+        ).correction_matrix()
