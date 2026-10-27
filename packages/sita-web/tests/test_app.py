@@ -61,6 +61,30 @@ class TestMatrixEndpoint:
         )
         assert res.status_code == 400
 
+    def test_large_formula(self, client):
+        res = client.post(
+            "/api/matrix",
+            data=json.dumps({"formula": "C3Si1500", "backbone_c": 3}),
+            content_type="application/json",
+        )
+        assert res.status_code == 200
+
+    def test_uninvertible_formula(self, client):
+        res = client.post(
+            "/api/matrix",
+            data=json.dumps({"formula": "C3Si90000", "backbone_c": 3}),
+            content_type="application/json",
+        )
+        assert res.status_code == 400
+
+    def test_oversized_payload(self, client):
+        res = client.post(
+            "/api/matrix",
+            data=json.dumps({"formula": "C" * 20000, "backbone_c": 3}),
+            content_type="application/json",
+        )
+        assert res.status_code == 413
+
 
 class TestMdvStarEndpoint:
     def test_success(self, client):

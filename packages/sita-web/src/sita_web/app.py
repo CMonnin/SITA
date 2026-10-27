@@ -36,6 +36,8 @@ def create_app():
         template_folder=str(here / "templates"),
         static_folder=str(here / "static"),
     )
+    # payloads are a formula and a short vector; reject anything larger
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024
 
     @app.route("/")
     def index():
